@@ -5,7 +5,6 @@ export type GameType = 'fivem' | 'redm'
 export interface LocaleOption {
   code: string
   label: string
-  flag: string
 }
 
 /** Server data returned from the CFX API */

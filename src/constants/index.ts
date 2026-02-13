@@ -2,24 +2,24 @@ import type { LocaleOption, SortOption } from '@/types'
 
 /** Available locale/country presets (labels are native language names, not translated) */
 export const LOCALE_OPTIONS: LocaleOption[] = [
-  { code: '', label: '', flag: '🌐' }, // label filled dynamically via i18n (All)
-  { code: 'th-TH', label: 'ไทย', flag: '🇹🇭' },
-  { code: 'en-US', label: 'English (US)', flag: '🇺🇸' },
-  { code: 'en-GB', label: 'English (UK)', flag: '🇬🇧' },
-  { code: 'de-DE', label: 'Deutsch', flag: '🇩🇪' },
-  { code: 'fr-FR', label: 'Français', flag: '🇫🇷' },
-  { code: 'pt-BR', label: 'Português (BR)', flag: '🇧🇷' },
-  { code: 'es-ES', label: 'Español', flag: '🇪🇸' },
-  { code: 'pl-PL', label: 'Polski', flag: '🇵🇱' },
-  { code: 'ro-RO', label: 'Română', flag: '🇷🇴' },
-  { code: 'it-IT', label: 'Italiano', flag: '🇮🇹' },
-  { code: 'nl-NL', label: 'Nederlands', flag: '🇳🇱' },
-  { code: 'tr-TR', label: 'Türkçe', flag: '🇹🇷' },
-  { code: 'ar-AE', label: 'العربية', flag: '🇦🇪' },
-  { code: 'ru-RU', label: 'Русский', flag: '🇷🇺' },
-  { code: 'zh-CN', label: '中文', flag: '🇨🇳' },
-  { code: 'ja-JP', label: '日本語', flag: '🇯🇵' },
-  { code: 'ko-KR', label: '한국어', flag: '🇰🇷' },
+  { code: '', label: '' }, // label filled dynamically via i18n (All)
+  { code: 'th-TH', label: 'ไทย' },
+  { code: 'en-US', label: 'English (US)' },
+  { code: 'en-GB', label: 'English (UK)' },
+  { code: 'de-DE', label: 'Deutsch' },
+  { code: 'fr-FR', label: 'Français' },
+  { code: 'pt-BR', label: 'Português (BR)' },
+  { code: 'es-ES', label: 'Español' },
+  { code: 'pl-PL', label: 'Polski' },
+  { code: 'ro-RO', label: 'Română' },
+  { code: 'it-IT', label: 'Italiano' },
+  { code: 'nl-NL', label: 'Nederlands' },
+  { code: 'tr-TR', label: 'Türkçe' },
+  { code: 'ar-AE', label: 'العربية' },
+  { code: 'ru-RU', label: 'Русский' },
+  { code: 'zh-CN', label: '中文' },
+  { code: 'ja-JP', label: '日本語' },
+  { code: 'ko-KR', label: '한국어' },
 ]
 
 /** Sort option presets (labelKey references TranslationSchema keys) */

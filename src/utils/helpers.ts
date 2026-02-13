@@ -135,12 +135,17 @@ export function debounce<T extends (...args: unknown[]) => void>(fn: T, ms: numb
   }) as T
 }
 
-/** Get flag emoji from locale code */
-export function getFlagFromLocale(locale: string): string {
-  const countryCode = locale.split(/[-_]/)[1]?.toUpperCase()
-  if (!countryCode || countryCode.length !== 2) return '🌐'
-  const codePoints = [...countryCode].map(c => 0x1F1E6 + c.charCodeAt(0) - 65)
-  return String.fromCodePoint(...codePoints)
+/** Get country code (lowercase) from locale string e.g. 'en-US' → 'us' */
+export function getCountryCode(locale: string): string {
+  const cc = locale.split(/[-_]/)[1]?.toLowerCase()
+  return cc && cc.length === 2 ? cc : ''
+}
+
+/** Get flag image URL from locale code via flagcdn.com CDN */
+export function getFlagUrl(locale: string): string {
+  const cc = getCountryCode(locale)
+  if (!cc) return ''
+  return `https://flagcdn.com/w40/${cc}.png`
 }
 
 /** Format number with commas */

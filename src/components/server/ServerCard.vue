@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { Server } from '@/types'
-import { renderHostname, formatNumber, getPlayerFillPercent, getFlagFromLocale, getConnectUrl } from '@/utils/helpers'
+import { renderHostname, formatNumber, getPlayerFillPercent, getFlagUrl, getConnectUrl } from '@/utils/helpers'
 import { useI18n } from '@/i18n'
 
 const { t } = useI18n()
@@ -24,7 +24,7 @@ const playerBarColor = computed(() => {
 
 const renderedHostname = computed(() => renderHostname(props.server.hostname))
 
-const flag = computed(() => getFlagFromLocale(props.server.locale))
+const flagSrc = computed(() => getFlagUrl(props.server.locale))
 </script>
 
 <template>
@@ -102,7 +102,8 @@ const flag = computed(() => getFlagFromLocale(props.server.locale))
         <div class="mt-2.5 flex flex-wrap items-center gap-2">
           <!-- Locale flag -->
           <span class="inline-flex items-center gap-1 rounded-md bg-surface-800 px-2 py-0.5 text-xs text-gray-400">
-            {{ flag }}
+            <img v-if="flagSrc" :src="flagSrc" :alt="server.locale" class="h-3.5 w-auto rounded-sm" loading="lazy" />
+            <span v-else>🌐</span>
             <span class="hidden sm:inline">{{ server.locale }}</span>
           </span>
 
