@@ -1,7 +1,15 @@
 {
   "name": "cfx-servers.azael",
+  "version": "1.0.0",
+  "description": "Frontend for cfx-servers.azael.dev",
+  "author": "Azael Dev",
+  "license": "SEE LICENSE IN LICENSE",
+  "homepage": "https://cfx-servers.azael.dev",
+  "repository": {
+        "type": "git",
+        "url": "https://github.com/Azael-Dev/cfx-servers.git"
+    },
   "private": true,
-  "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
