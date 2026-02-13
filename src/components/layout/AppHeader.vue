@@ -19,6 +19,11 @@ const emit = defineEmits<{
 const currentCount = computed(() =>
   props.gameType === 'fivem' ? props.playerCounts.fivem : props.playerCounts.redm
 )
+
+const handleLocaleChange = (event: Event) => {
+  const target = event.target as HTMLSelectElement
+  setLocale(target.value as Locale)
+}
 </script>
 
 <template>
@@ -74,17 +79,25 @@ const currentCount = computed(() =>
         <div class="flex items-center gap-3">
           <!-- Language Switcher -->
           <div class="relative">
+            <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+              <img
+                :src="`https://flagcdn.com/w40/${availableLocales.find(l => l.code === currentLocale)?.countryCode}.png`"
+                :alt="currentLocale"
+                class="h-4 w-auto rounded-sm"
+                loading="lazy"
+              />
+            </div>
             <select
               :value="currentLocale"
-              @change="setLocale(($event.target as HTMLSelectElement).value as Locale)"
-              class="appearance-none rounded-lg border border-surface-700 bg-surface-900 px-3 py-1.5 pr-8 text-sm text-gray-300 transition-colors focus:border-primary-500 focus:outline-none cursor-pointer"
+              @change="handleLocaleChange"
+              class="appearance-none rounded-lg border border-surface-700 bg-surface-900 pl-10 pr-8 py-1.5 text-sm text-gray-300 transition-colors focus:border-primary-500 focus:outline-none cursor-pointer"
             >
               <option
                 v-for="loc in availableLocales"
                 :key="loc.code"
                 :value="loc.code"
               >
-                {{ loc.flag }} {{ loc.label }}
+                {{ loc.label }}
               </option>
             </select>
             <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">

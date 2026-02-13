@@ -73,9 +73,9 @@ function tt(key: keyof TranslationSchema, params?: Record<string, string | numbe
 const timeLocale = computed(() => (currentLocale.value === 'th' ? 'th-TH' : 'en-US'))
 
 /** Available locales for the language switcher */
-const availableLocales: { code: Locale; label: string; flag: string }[] = [
-  { code: 'en', label: 'English', flag: '🇺🇸' },
-  { code: 'th', label: 'ไทย', flag: '🇹🇭' },
+const availableLocales: { code: Locale; label: string; flag: string; countryCode: string }[] = [
+  { code: 'en', label: 'English', flag: '🇺🇸', countryCode: 'us' },
+  { code: 'th', label: 'ไทย', flag: '🇹🇭', countryCode: 'th' },
 ]
 
 export function useI18n() {
