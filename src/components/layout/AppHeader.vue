@@ -27,9 +27,7 @@ const currentCount = computed(() =>
       <div class="flex h-16 items-center justify-between">
         <!-- Logo -->
         <router-link to="/" class="flex items-center gap-3 group">
-          <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary-500 to-accent-500 text-white font-bold text-sm">
-            CFX
-          </div>
+          <img src="/images/logo.gif" alt="CFX Logo" class="h-9 w-9 object-contain rounded-full" />
           <div class="hidden sm:block">
             <h1 class="text-lg font-bold text-white group-hover:text-primary-400 transition-colors">
               {{ t.siteTitle }}
