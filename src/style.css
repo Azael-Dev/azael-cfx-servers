@@ -49,3 +49,8 @@
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-surface-200);
 }
+
+/* Button cursor */
+button {
+  cursor: pointer;
+}

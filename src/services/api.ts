@@ -1,6 +1,19 @@
-import { decodeMultiStream } from '@msgpack/msgpack'
+import { decodeMultiStream, type DecoderOptions } from '@msgpack/msgpack'
 import { API, CACHE_DURATION } from '@/constants'
 import type { CfxServer, PlayerCounts } from '@/types'
+
+/**
+ * The FiveM streaming API may use binary (Uint8Array) map keys.
+ * The default decoder rejects anything that isn't string | number,
+ * so we coerce unknown keys to their string representation.
+ */
+const msgpackOptions: DecoderOptions = {
+  mapKeyConverter: (key: unknown): string | number => {
+    if (typeof key === 'string' || typeof key === 'number') return key
+    if (key instanceof Uint8Array) return new TextDecoder().decode(key)
+    return String(key)
+  },
+}
 
 interface CacheEntry<T> {
   data: T
@@ -23,8 +36,44 @@ function setCache<T>(key: string, data: T): void {
 }
 
 /**
+ * Decode a msgpack stream body into CfxServer[] entries.
+ */
+async function decodeMsgpackStream(
+  body: ReadableStream<Uint8Array>,
+  onProgress?: (count: number) => void
+): Promise<CfxServer[]> {
+  const servers: CfxServer[] = []
+
+  for await (const entry of decodeMultiStream(body, msgpackOptions)) {
+    const serverEntry = entry as Record<string, unknown>
+
+    if (serverEntry && typeof serverEntry === 'object') {
+      const endPoint = serverEntry['EndPoint'] as string | undefined
+      const data = serverEntry['Data'] as CfxServer['Data'] | undefined
+
+      if (endPoint && data) {
+        servers.push({ EndPoint: endPoint, Data: data })
+        if (onProgress && servers.length % 100 === 0) {
+          onProgress(servers.length)
+        }
+      }
+    }
+  }
+
+  return servers
+}
+
+/**
  * Fetch all servers via the streaming msgpack endpoint.
- * This streams server entries and decodes them using msgpack.
+ *
+ * The `streamRedir` endpoint may:
+ *   a) HTTP 302 → browser follows redirect to the real msgpack stream, or
+ *   b) HTTP 200 with a URL in the body that we must fetch ourselves.
+ *
+ * We detect case (b) by peeking at the first bytes: if the body looks like
+ * a URL (starts with "http"), we fetch that URL and decode its stream instead.
+ *
+ * Falls back to the top-servers JSON API when streaming fails entirely.
  */
 export async function fetchAllServers(
   onProgress?: (count: number) => void
@@ -33,41 +82,130 @@ export async function fetchAllServers(
   const cached = getCached<CfxServer[]>(cacheKey)
   if (cached) return cached
 
+  try {
+    const servers = await fetchViaStream(onProgress)
+    if (servers.length > 0) {
+      setCache(cacheKey, servers)
+      return servers
+    }
+  } catch (err) {
+    console.warn('[cfx] Streaming fetch failed, falling back to JSON API:', err)
+  }
+
+  // Fallback: aggregate top servers from multiple locales
+  const servers = await fetchViaTopServers(onProgress)
+  if (servers.length > 0) {
+    setCache(cacheKey, servers)
+  }
+  return servers
+}
+
+/**
+ * Primary path — msgpack stream via streamRedir
+ */
+async function fetchViaStream(
+  onProgress?: (count: number) => void
+): Promise<CfxServer[]> {
   const response = await fetch(API.STREAM_REDIR)
   if (!response.ok) {
-    throw new Error(`Failed to fetch servers: ${response.status}`)
+    throw new Error(`streamRedir responded with ${response.status}`)
   }
 
   if (!response.body) {
     throw new Error('ReadableStream not supported')
   }
 
+  // --- Peek at the first chunk to decide if it's a URL or raw msgpack ----
+  const reader = response.body.getReader()
+  const { value: firstChunk, done } = await reader.read()
+
+  if (done || !firstChunk || firstChunk.length === 0) {
+    reader.releaseLock()
+    throw new Error('Empty response body')
+  }
+
+  // Check if the response looks like a plain-text URL (starts with "http")
+  const headStr = new TextDecoder().decode(firstChunk.slice(0, 10))
+
+  if (headStr.startsWith('http')) {
+    // Case (b): body is a URL string — read the rest and fetch it
+    reader.releaseLock()
+    const fullBody = await response.text()
+    // The first chunk was already consumed by the reader, but text() may
+    // still return the remainder. Safeguard: rebuild the URL from what we have.
+    const streamUrl = (new TextDecoder().decode(firstChunk) + fullBody).trim()
+      // strip surrounding quotes if present
+      .replace(/^["']|["']$/g, '')
+
+    if (!streamUrl.startsWith('http')) {
+      throw new Error(`Unexpected streamRedir body: ${streamUrl.slice(0, 120)}`)
+    }
+
+    const streamRes = await fetch(streamUrl)
+    if (!streamRes.ok) throw new Error(`Stream URL responded with ${streamRes.status}`)
+    if (!streamRes.body) throw new Error('ReadableStream not supported for stream URL')
+
+    return decodeMsgpackStream(streamRes.body, onProgress)
+  }
+
+  // Case (a): body is already the msgpack stream — re-assemble the stream
+  // from the chunk we already read + the remaining data.
+  const reassembled = new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(firstChunk)
+    },
+    async pull(controller) {
+      const { value, done: readerDone } = await reader.read()
+      if (readerDone) {
+        controller.close()
+      } else if (value) {
+        controller.enqueue(value)
+      }
+    },
+    cancel() {
+      reader.cancel()
+    },
+  })
+
+  return decodeMsgpackStream(reassembled, onProgress)
+}
+
+/**
+ * Fallback — aggregate servers from the top-servers JSON API for all locales.
+ * This is slower but avoids the msgpack stream entirely.
+ */
+async function fetchViaTopServers(
+  onProgress?: (count: number) => void
+): Promise<CfxServer[]> {
+  // Fetch a broad set of locales to get maximum coverage
+  const locales = [
+    'th_TH', 'en_US', 'en_GB', 'de_DE', 'fr_FR', 'pt_BR', 'es_ES',
+    'pl_PL', 'ru_RU', 'it_IT', 'nl_NL', 'tr_TR', 'ar_SA', 'zh_TW',
+    'ja_JP', 'ko_KR',
+  ]
+
+  const seen = new Set<string>()
   const servers: CfxServer[] = []
 
-  try {
-    for await (const entry of decodeMultiStream(response.body)) {
-      const serverEntry = entry as Record<string, unknown>
+  // Fetch in parallel batches of 4
+  for (let i = 0; i < locales.length; i += 4) {
+    const batch = locales.slice(i, i + 4)
+    const results = await Promise.allSettled(
+      batch.map(locale => fetchTopServers(locale))
+    )
 
-      if (serverEntry && typeof serverEntry === 'object') {
-        // The stream emits entries; we extract EndPoint and Data
-        const endPoint = serverEntry['EndPoint'] as string | undefined
-        const data = serverEntry['Data'] as CfxServer['Data'] | undefined
-
-        if (endPoint && data) {
-          servers.push({ EndPoint: endPoint, Data: data })
-          if (onProgress && servers.length % 100 === 0) {
-            onProgress(servers.length)
+    for (const res of results) {
+      if (res.status === 'fulfilled') {
+        for (const srv of res.value) {
+          if (!seen.has(srv.EndPoint)) {
+            seen.add(srv.EndPoint)
+            servers.push(srv)
           }
         }
       }
     }
-  } catch (err) {
-    // Stream may end abruptly; if we have some servers, return them
-    console.warn('Stream decode completed with:', servers.length, 'servers', err)
-  }
 
-  if (servers.length > 0) {
-    setCache(cacheKey, servers)
+    onProgress?.(servers.length)
   }
 
   return servers
