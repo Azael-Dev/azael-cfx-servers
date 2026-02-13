@@ -1,19 +1,9 @@
-import { decodeMultiStream, type DecoderOptions } from '@msgpack/msgpack'
 import { API, CACHE_DURATION } from '@/constants'
-import type { CfxServer, PlayerCounts } from '@/types'
+import type { CfxServer, CfxServerData, PlayerCounts } from '@/types'
 
-/**
- * The FiveM streaming API may use binary (Uint8Array) map keys.
- * The default decoder rejects anything that isn't string | number,
- * so we coerce unknown keys to their string representation.
- */
-const msgpackOptions: DecoderOptions = {
-  mapKeyConverter: (key: unknown): string | number => {
-    if (typeof key === 'string' || typeof key === 'number') return key
-    if (key instanceof Uint8Array) return new TextDecoder().decode(key)
-    return String(key)
-  },
-}
+// ---------------------------------------------------------------------------
+// Cache helpers
+// ---------------------------------------------------------------------------
 
 interface CacheEntry<T> {
   data: T
@@ -35,45 +25,207 @@ function setCache<T>(key: string, data: T): void {
   cache.set(key, { data, timestamp: Date.now() })
 }
 
-/**
- * Decode a msgpack stream body into CfxServer[] entries.
- */
-async function decodeMsgpackStream(
-  body: ReadableStream<Uint8Array>,
-  onProgress?: (count: number) => void
-): Promise<CfxServer[]> {
-  const servers: CfxServer[] = []
+// ---------------------------------------------------------------------------
+// Lightweight protobuf helpers (no external dependency)
+// ---------------------------------------------------------------------------
 
-  for await (const entry of decodeMultiStream(body, msgpackOptions)) {
-    const serverEntry = entry as Record<string, unknown>
+const textDecoder = new TextDecoder('utf-8', { fatal: false })
 
-    if (serverEntry && typeof serverEntry === 'object') {
-      const endPoint = serverEntry['EndPoint'] as string | undefined
-      const data = serverEntry['Data'] as CfxServer['Data'] | undefined
+/** Read a varint from `data` at `pos`. Returns [value, newPos]. */
+function readVarint(data: Uint8Array, pos: number): [number, number] {
+  let val = 0
+  let shift = 0
+  while (pos < data.length) {
+    const b = data[pos++]!
+    val |= (b & 0x7f) << shift
+    if ((b & 0x80) === 0) break
+    shift += 7
+  }
+  return [val, pos]
+}
 
-      if (endPoint && data) {
-        servers.push({ EndPoint: endPoint, Data: data })
-        if (onProgress && servers.length % 100 === 0) {
-          onProgress(servers.length)
-        }
+/** Read a length-delimited field from `data` at `pos`. Returns [bytes, newPos]. */
+function readLengthDelimited(data: Uint8Array, pos: number): [Uint8Array, number] {
+  const [len, p] = readVarint(data, pos)
+  return [data.subarray(p, p + len), p + len]
+}
+
+/** Decode a single string from `data` at `pos`. */
+function readString(data: Uint8Array, pos: number): [string, number] {
+  const [bytes, newPos] = readLengthDelimited(data, pos)
+  return [textDecoder.decode(bytes), newPos]
+}
+
+// ---------------------------------------------------------------------------
+// Stream protobuf decoder
+//
+// The FiveM /api/servers/stream/ endpoint returns a sequence of
+// length-prefixed protobuf messages:
+//
+//   [ 4-byte LE uint32 length ][ protobuf message of that length ] …
+//
+// Each message has this schema:
+//   message ServerEntry {
+//     string EndPoint = 1;
+//     ServerData Data  = 2; // length-delimited nested message
+//   }
+//
+// ServerData schema (relevant fields):
+//   message ServerData {
+//     uint32 sv_maxclients = 1;
+//     uint32 clients       = 2;
+//     string hostname      = 4;
+//     string gametype      = 5;
+//     string mapname       = 6;
+//     string server        = 9;
+//     repeated Var vars    = 12;
+//     uint32 upvotePower   = 16;
+//   }
+//
+//   message Var {
+//     string key   = 1;
+//     string value = 2;
+//   }
+// ---------------------------------------------------------------------------
+
+/** Parse a single Var message (key = field 1, value = field 2). */
+function parseVar(data: Uint8Array): [string, string] {
+  let pos = 0
+  let key = ''
+  let value = ''
+
+  while (pos < data.length) {
+    const tag = data[pos++]!
+    const fieldNum = tag >> 3
+    const wireType = tag & 0x07
+
+    if (wireType !== 2) break // only expect length-delimited strings
+    const [str, np] = readString(data, pos)
+    pos = np
+    if (fieldNum === 1) key = str
+    else if (fieldNum === 2) value = str
+  }
+
+  return [key, value]
+}
+
+/** Parse the nested ServerData protobuf message. */
+function parseServerData(data: Uint8Array): CfxServerData {
+  const vars: Record<string, string> = {}
+  let maxClients = 0
+  let clients = 0
+  let hostname = ''
+  let gametype = ''
+  let mapname = ''
+  let serverVersion = ''
+  let upvotePower = 0
+
+  let pos = 0
+  while (pos < data.length) {
+    const tag = data[pos]!
+    const fieldNum = tag >> 3
+    const wireType = tag & 0x07
+    pos++
+
+    if (fieldNum === 0 || fieldNum > 30) break
+
+    if (wireType === 0) {
+      // varint
+      const [val, np] = readVarint(data, pos)
+      pos = np
+      if (fieldNum === 1) maxClients = val
+      else if (fieldNum === 2) clients = val
+      else if (fieldNum === 16) upvotePower = val
+    } else if (wireType === 2) {
+      // length-delimited
+      const [bytes, np] = readLengthDelimited(data, pos)
+      pos = np
+      if (fieldNum === 4) hostname = textDecoder.decode(bytes)
+      else if (fieldNum === 5) gametype = textDecoder.decode(bytes)
+      else if (fieldNum === 6) mapname = textDecoder.decode(bytes)
+      else if (fieldNum === 9) serverVersion = textDecoder.decode(bytes)
+      else if (fieldNum === 12) {
+        const [k, v] = parseVar(bytes)
+        if (k) vars[k] = v
       }
+    } else if (wireType === 5) {
+      pos += 4 // fixed32
+    } else if (wireType === 1) {
+      pos += 8 // fixed64
+    } else {
+      break // unknown wire type
     }
   }
 
-  return servers
+  return {
+    clients,
+    gamename: vars['gamename'] || 'gta5',
+    gametype,
+    hostname,
+    mapname,
+    sv_maxclients: maxClients,
+    enhancedHostSupport: false,
+    resources: [],
+    server: serverVersion,
+    vars,
+    selfReportedClients: clients,
+    players: [],
+    ownerID: '',
+    private: false,
+    fallback: false,
+    connectEndPoints: [],
+    upvotePower,
+    burstPower: 0,
+    support_status: vars['support_status'] || '',
+    ownerName: vars['ownerName'] || '',
+    ownerProfile: vars['ownerProfile'] || '',
+    ownerAvatar: vars['ownerAvatar'] || '',
+    lastSeen: '',
+    iconVersion: parseInt(vars['iconVersion'] || '0', 10) || 0,
+  }
 }
 
+/** Parse a single length-prefixed entry from the stream buffer. */
+function parseEntry(
+  buf: Uint8Array,
+  offset: number,
+): { server: CfxServer; nextOffset: number } | null {
+  if (offset + 4 > buf.length) return null
+
+  const dv = new DataView(buf.buffer, buf.byteOffset)
+  const entryLen = dv.getUint32(offset, true) // little-endian
+  offset += 4
+
+  if (entryLen === 0 || offset + entryLen > buf.length) return null
+
+  const entry = buf.subarray(offset, offset + entryLen)
+  let pos = 0
+
+  // Field 1: EndPoint (string)
+  pos++ // skip tag byte (0x0a)
+  const [endPoint, p1] = readString(entry, pos)
+  pos = p1
+
+  // Field 2: Data (nested message)
+  pos++ // skip tag byte (0x12)
+  const [dataBytes] = readLengthDelimited(entry, pos)
+  const data = parseServerData(dataBytes)
+
+  return {
+    server: { EndPoint: endPoint, Data: data },
+    nextOffset: offset + entryLen,
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Public API
+// ---------------------------------------------------------------------------
+
 /**
- * Fetch all servers via the streaming msgpack endpoint.
+ * Fetch all servers from the FiveM streaming API.
  *
- * The `streamRedir` endpoint may:
- *   a) HTTP 302 → browser follows redirect to the real msgpack stream, or
- *   b) HTTP 200 with a URL in the body that we must fetch ourselves.
- *
- * We detect case (b) by peeking at the first bytes: if the body looks like
- * a URL (starts with "http"), we fetch that URL and decode its stream instead.
- *
- * Falls back to the top-servers JSON API when streaming fails entirely.
+ * Downloads the full ~19 MB response buffer, then parses length-prefixed
+ * protobuf entries. Uses STREAM_REDIR first, then STREAM_DIRECT as fallback.
  */
 export async function fetchAllServers(
   onProgress?: (count: number) => void
@@ -82,181 +234,46 @@ export async function fetchAllServers(
   const cached = getCached<CfxServer[]>(cacheKey)
   if (cached) return cached
 
-  try {
-    const servers = await fetchViaStream(onProgress)
-    if (servers.length > 0) {
-      setCache(cacheKey, servers)
-      return servers
-    }
-  } catch (err) {
-    console.warn('[cfx] Streaming fetch failed, falling back to JSON API:', err)
-  }
+  const urls = [API.STREAM_REDIR, API.STREAM_DIRECT]
 
-  // Fallback: aggregate top servers from multiple locales
-  const servers = await fetchViaTopServers(onProgress)
-  if (servers.length > 0) {
-    setCache(cacheKey, servers)
-  }
-  return servers
-}
-
-/**
- * Primary path — msgpack stream via streamRedir
- */
-async function fetchViaStream(
-  onProgress?: (count: number) => void
-): Promise<CfxServer[]> {
-  const response = await fetch(API.STREAM_REDIR)
-  if (!response.ok) {
-    throw new Error(`streamRedir responded with ${response.status}`)
-  }
-
-  if (!response.body) {
-    throw new Error('ReadableStream not supported')
-  }
-
-  // --- Peek at the first chunk to decide if it's a URL or raw msgpack ----
-  const reader = response.body.getReader()
-  const { value: firstChunk, done } = await reader.read()
-
-  if (done || !firstChunk || firstChunk.length === 0) {
-    reader.releaseLock()
-    throw new Error('Empty response body')
-  }
-
-  // Check if the response looks like a plain-text URL (starts with "http")
-  const headStr = new TextDecoder().decode(firstChunk.slice(0, 10))
-
-  if (headStr.startsWith('http')) {
-    // Case (b): body is a URL string — read the rest and fetch it
-    reader.releaseLock()
-    const fullBody = await response.text()
-    // The first chunk was already consumed by the reader, but text() may
-    // still return the remainder. Safeguard: rebuild the URL from what we have.
-    const streamUrl = (new TextDecoder().decode(firstChunk) + fullBody).trim()
-      // strip surrounding quotes if present
-      .replace(/^["']|["']$/g, '')
-
-    if (!streamUrl.startsWith('http')) {
-      throw new Error(`Unexpected streamRedir body: ${streamUrl.slice(0, 120)}`)
-    }
-
-    const streamRes = await fetch(streamUrl)
-    if (!streamRes.ok) throw new Error(`Stream URL responded with ${streamRes.status}`)
-    if (!streamRes.body) throw new Error('ReadableStream not supported for stream URL')
-
-    return decodeMsgpackStream(streamRes.body, onProgress)
-  }
-
-  // Case (a): body is already the msgpack stream — re-assemble the stream
-  // from the chunk we already read + the remaining data.
-  const reassembled = new ReadableStream<Uint8Array>({
-    start(controller) {
-      controller.enqueue(firstChunk)
-    },
-    async pull(controller) {
-      const { value, done: readerDone } = await reader.read()
-      if (readerDone) {
-        controller.close()
-      } else if (value) {
-        controller.enqueue(value)
+  for (const url of urls) {
+    try {
+      const response = await fetch(url)
+      if (!response.ok) {
+        console.warn(`[cfx] ${url} responded with ${response.status}`)
+        continue
       }
-    },
-    cancel() {
-      reader.cancel()
-    },
-  })
 
-  return decodeMsgpackStream(reassembled, onProgress)
-}
+      const arrayBuf = await response.arrayBuffer()
+      const buf = new Uint8Array(arrayBuf)
 
-/**
- * Fallback — aggregate servers from the top-servers JSON API for all locales.
- * This is slower but avoids the msgpack stream entirely.
- */
-async function fetchViaTopServers(
-  onProgress?: (count: number) => void
-): Promise<CfxServer[]> {
-  // Fetch a broad set of locales to get maximum coverage
-  const locales = [
-    'th_TH', 'en_US', 'en_GB', 'de_DE', 'fr_FR', 'pt_BR', 'es_ES',
-    'pl_PL', 'ru_RU', 'it_IT', 'nl_NL', 'tr_TR', 'ar_SA', 'zh_TW',
-    'ja_JP', 'ko_KR',
-  ]
+      const servers: CfxServer[] = []
+      let offset = 0
 
-  const seen = new Set<string>()
-  const servers: CfxServer[] = []
+      while (offset < buf.length) {
+        const result = parseEntry(buf, offset)
+        if (!result) break
+        servers.push(result.server)
+        offset = result.nextOffset
 
-  // Fetch in parallel batches of 4
-  for (let i = 0; i < locales.length; i += 4) {
-    const batch = locales.slice(i, i + 4)
-    const results = await Promise.allSettled(
-      batch.map(locale => fetchTopServers(locale))
-    )
-
-    for (const res of results) {
-      if (res.status === 'fulfilled') {
-        for (const srv of res.value) {
-          if (!seen.has(srv.EndPoint)) {
-            seen.add(srv.EndPoint)
-            servers.push(srv)
-          }
+        if (onProgress && servers.length % 500 === 0) {
+          onProgress(servers.length)
         }
       }
-    }
 
-    onProgress?.(servers.length)
-  }
-
-  return servers
-}
-
-/**
- * Fetch top servers for a given locale
- */
-export async function fetchTopServers(locale: string): Promise<CfxServer[]> {
-  const cacheKey = `top-${locale}`
-  const cached = getCached<CfxServer[]>(cacheKey)
-  if (cached) return cached
-
-  const url = `${API.TOP_SERVERS}/${locale}`
-  const response = await fetch(url)
-
-  if (!response.ok) {
-    throw new Error(`Failed to fetch top servers for ${locale}: ${response.status}`)
-  }
-
-  const rawData = await response.json()
-
-  // The response could be an array or an object with a servers property
-  let servers: CfxServer[] = []
-
-  if (Array.isArray(rawData)) {
-    servers = rawData
-  } else if (rawData && typeof rawData === 'object') {
-    // Try common response shapes
-    const entries = Object.entries(rawData)
-    servers = entries
-      .filter(([, value]) => value && typeof value === 'object' && 'Data' in (value as Record<string, unknown>))
-      .map(([key, value]) => {
-        const v = value as Record<string, unknown>
-        return {
-          EndPoint: (v['EndPoint'] as string) || key,
-          Data: v['Data'] as CfxServer['Data'],
-        }
-      })
-
-    // If entries didn't map, the format might be { endpoint: serverData }
-    if (servers.length === 0) {
-      servers = entries.map(([key, v]) => ({
-        EndPoint: key,
-        Data: v as CfxServer['Data'],
-      }))
+      if (servers.length > 0) {
+        console.info(`[cfx] Loaded ${servers.length} servers from ${url}`)
+        setCache(cacheKey, servers)
+        onProgress?.(servers.length)
+        return servers
+      }
+    } catch (err) {
+      console.warn(`[cfx] Failed to fetch from ${url}:`, err)
     }
   }
 
-  setCache(cacheKey, servers)
-  return servers
+  console.error('[cfx] All server fetch endpoints failed')
+  return []
 }
 
 /**
@@ -286,7 +303,9 @@ export async function fetchSingleServer(address: string): Promise<CfxServer | nu
 }
 
 /**
- * Fetch global player counts
+ * Fetch global player counts.
+ *
+ * The counts endpoints return a JSON array: [players, unknown, maxSlots]
  */
 export async function fetchPlayerCounts(): Promise<PlayerCounts> {
   const cacheKey = 'player-counts'
@@ -304,12 +323,13 @@ export async function fetchPlayerCounts(): Promise<PlayerCounts> {
 
     if (fivemRes.status === 'fulfilled' && fivemRes.value.ok) {
       const data = await fivemRes.value.json()
-      fivem = data?.clients || data?.count || 0
+      // Response is [players, unknown, maxSlots]
+      fivem = Array.isArray(data) ? (data[0] ?? 0) : (data?.clients ?? data?.count ?? 0)
     }
 
     if (redmRes.status === 'fulfilled' && redmRes.value.ok) {
       const data = await redmRes.value.json()
-      redm = data?.clients || data?.count || 0
+      redm = Array.isArray(data) ? (data[0] ?? 0) : (data?.clients ?? data?.count ?? 0)
     }
 
     const counts = { fivem, redm }

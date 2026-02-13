@@ -37,13 +37,13 @@ export const DEFAULT_PER_PAGE = 30
 
 /** API base URLs */
 export const API = {
-  /** All server data (streaming msgpack) */
-  STREAM_REDIR: 'https://servers-frontend.fivem.net/api/servers/streamRedir',
-  /** Top servers by locale */
-  TOP_SERVERS: 'https://servers-frontend.fivem.net/api/servers/top',
+  /** All server data via redirect (streaming msgpack) */
+  STREAM_REDIR: 'https://servers-frontend.fivem.net/api/servers/streamRedir/',
+  /** All server data direct (streaming msgpack, fallback) */
+  STREAM_DIRECT: 'https://servers-frontend.fivem.net/api/servers/stream/',
   /** Single server details */
   SINGLE_SERVER: 'https://servers-frontend.fivem.net/api/servers/single',
-  /** Player counts */
+  /** Player counts — response: [players, unknown, maxSlots] */
   COUNTS_FIVEM: 'https://static.cfx.re/runtime/counts.json',
   COUNTS_REDM: 'https://static.cfx.re/runtime/counts_rdr3.json',
   /** Server icon */
