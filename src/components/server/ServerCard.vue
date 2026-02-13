@@ -22,7 +22,19 @@ const playerBarColor = computed(() => {
   return 'bg-primary-500'
 })
 
-const renderedHostname = computed(() => renderHostname(props.server.hostname))
+/** Resolved display name: sv_projectName > sv_projectDesc > hostname */
+const displayName = computed(() =>
+  props.server.projectName || props.server.projectDescription || props.server.hostname
+)
+
+const renderedHostname = computed(() => renderHostname(displayName.value))
+
+/** Show subtitle only when main title is projectName and projectDescription exists */
+const subtitle = computed(() =>
+  props.server.projectName && props.server.projectDescription
+    ? props.server.projectDescription
+    : ''
+)
 
 const flagSrc = computed(() => getFlagUrl(props.server.locale))
 </script>
@@ -69,9 +81,9 @@ const flagSrc = computed(() => getFlagUrl(props.server.locale))
               v-html="renderedHostname"
             ></h3>
 
-            <!-- Project name -->
-            <p v-if="server.projectName" class="mt-0.5 truncate text-xs text-gray-500">
-              {{ server.projectName }}
+            <!-- Project description (shown when main title is sv_projectName) -->
+            <p v-if="subtitle" class="mt-0.5 truncate text-xs text-gray-500">
+              {{ subtitle }}
             </p>
           </div>
 

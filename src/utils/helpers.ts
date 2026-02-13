@@ -17,17 +17,18 @@ export function cleanHostname(hostname: string): string {
  * Render hostname with FiveM color codes as HTML spans
  */
 export function renderHostname(hostname: string): string {
+  // Official colors: docs.fivem.net/docs/server-manual/server-name-colors/#available-color-codes
   const colorMap: Record<string, string> = {
-    '0': '#FFFFFF', // White
-    '1': '#FF0000', // Red
-    '2': '#00FF00', // Green
-    '3': '#FFFF00', // Yellow
-    '4': '#0000FF', // Blue
-    '5': '#00FFFF', // Cyan
-    '6': '#FF00FF', // Magenta
-    '7': '#FFFFFF', // White
-    '8': '#FF8C00', // Orange
-    '9': '#808080', // Grey
+    '0': '#FFFFF0', // White
+    '1': '#F44336', // Red
+    '2': '#4CAF50', // Green
+    '3': '#FFEB3B', // Yellow
+    '4': '#42A5F5', // Blue
+    '5': '#03A9F4', // Light Blue
+    '6': '#9C27B0', // Purple
+    '7': '#FFFFF0', // White
+    '8': '#FF5722', // Orange
+    '9': '#9E9E9E', // Grey
   }
 
   let result = ''
@@ -70,11 +71,13 @@ export function normalizeServer(raw: CfxServer): Server {
   const data = raw.Data
   const vars = data.vars || {}
 
+  const displayName = vars['sv_projectName'] || vars['sv_projectDesc'] || data.hostname || ''
+
   return {
     id: raw.EndPoint,
     endpoint: raw.EndPoint,
     hostname: data.hostname || '',
-    hostnameClean: cleanHostname(data.hostname || ''),
+    hostnameClean: cleanHostname(displayName),
     players: data.clients || data.selfReportedClients || 0,
     maxPlayers: data.sv_maxclients || 0,
     ping: 0,
