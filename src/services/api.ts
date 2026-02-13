@@ -224,8 +224,12 @@ function parseEntry(
 /**
  * Fetch all servers from the FiveM streaming API.
  *
- * Downloads the full ~19 MB response buffer, then parses length-prefixed
- * protobuf entries. Uses STREAM_REDIR first, then STREAM_DIRECT as fallback.
+ * The main FiveM server list API has CORS issues:
+ *   - `streamRedir` returns a 302 without CORS headers → browser blocks it
+ *   - `stream/` direct endpoint has no CORS headers
+ *
+ * Solution: Use `frontend.cfx-services.net` which serves the same data with
+ * `Access-Control-Allow-Origin: *`. Falls back to Vite dev proxy if available.
  */
 export async function fetchAllServers(
   onProgress?: (count: number) => void
@@ -234,46 +238,91 @@ export async function fetchAllServers(
   const cached = getCached<CfxServer[]>(cacheKey)
   if (cached) return cached
 
-  const urls = [API.STREAM_REDIR, API.STREAM_DIRECT]
+  // Strategy 1: CORS-enabled CDN endpoint (works in browser)
+  try {
+    const servers = await fetchDirectStream(API.STREAM_CFX, onProgress)
+    if (servers.length > 0) {
+      setCache(cacheKey, servers)
+      return servers
+    }
+  } catch (err) {
+    console.warn('[cfx] CFX services stream failed:', err)
+  }
 
-  for (const url of urls) {
+  // Strategy 2: Vite dev proxy (development only)
+  try {
+    const servers = await fetchDirectStream('/cfx-api/servers/stream/', onProgress)
+    if (servers.length > 0) {
+      setCache(cacheKey, servers)
+      return servers
+    }
+  } catch (err) {
+    console.warn('[cfx] Proxy stream failed:', err)
+  }
+
+  // Strategy 3: Direct endpoints (non-browser / same-origin contexts)
+  for (const url of [API.STREAM_REDIR, API.STREAM_DIRECT]) {
     try {
-      const response = await fetch(url)
-      if (!response.ok) {
-        console.warn(`[cfx] ${url} responded with ${response.status}`)
-        continue
-      }
-
-      const arrayBuf = await response.arrayBuffer()
-      const buf = new Uint8Array(arrayBuf)
-
-      const servers: CfxServer[] = []
-      let offset = 0
-
-      while (offset < buf.length) {
-        const result = parseEntry(buf, offset)
-        if (!result) break
-        servers.push(result.server)
-        offset = result.nextOffset
-
-        if (onProgress && servers.length % 500 === 0) {
-          onProgress(servers.length)
-        }
-      }
-
+      const servers = await fetchDirectStream(url, onProgress)
       if (servers.length > 0) {
-        console.info(`[cfx] Loaded ${servers.length} servers from ${url}`)
         setCache(cacheKey, servers)
-        onProgress?.(servers.length)
         return servers
       }
     } catch (err) {
-      console.warn(`[cfx] Failed to fetch from ${url}:`, err)
+      console.warn(`[cfx] ${url} failed:`, err)
     }
   }
 
   console.error('[cfx] All server fetch endpoints failed')
   return []
+}
+
+/**
+ * Fetch and parse a stream response directly.
+ */
+async function fetchDirectStream(
+  url: string,
+  onProgress?: (count: number) => void
+): Promise<CfxServer[]> {
+  const response = await fetch(url)
+  if (!response.ok) {
+    throw new Error(`${url} responded with ${response.status}`)
+  }
+  return parseStreamResponse(response, onProgress)
+}
+
+/**
+ * Parse a Response containing the protobuf stream into CfxServer[].
+ */
+async function parseStreamResponse(
+  response: Response,
+  onProgress?: (count: number) => void
+): Promise<CfxServer[]> {
+  const arrayBuf = await response.arrayBuffer()
+  const buf = new Uint8Array(arrayBuf)
+
+  console.info(`[cfx] Downloaded ${(buf.length / 1024 / 1024).toFixed(1)} MB stream`)
+
+  const servers: CfxServer[] = []
+  let offset = 0
+
+  while (offset < buf.length) {
+    const result = parseEntry(buf, offset)
+    if (!result) break
+    servers.push(result.server)
+    offset = result.nextOffset
+
+    if (onProgress && servers.length % 500 === 0) {
+      onProgress(servers.length)
+    }
+  }
+
+  if (servers.length > 0) {
+    console.info(`[cfx] Parsed ${servers.length} servers`)
+    onProgress?.(servers.length)
+  }
+
+  return servers
 }
 
 /**

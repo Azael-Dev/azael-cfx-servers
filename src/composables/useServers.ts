@@ -14,7 +14,7 @@ let refreshTimer: ReturnType<typeof setInterval> | null = null
 
 const filters = ref<FilterState>({
   search: '',
-  locale: 'th_TH',
+  locale: '',
   gameType: 'fivem' as GameType,
   hideEmpty: false,
   hideFull: false,

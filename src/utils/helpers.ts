@@ -137,7 +137,7 @@ export function debounce<T extends (...args: unknown[]) => void>(fn: T, ms: numb
 
 /** Get flag emoji from locale code */
 export function getFlagFromLocale(locale: string): string {
-  const countryCode = locale.split('_')[1]?.toUpperCase()
+  const countryCode = locale.split(/[-_]/)[1]?.toUpperCase()
   if (!countryCode || countryCode.length !== 2) return '🌐'
   const codePoints = [...countryCode].map(c => 0x1F1E6 + c.charCodeAt(0) - 65)
   return String.fromCodePoint(...codePoints)
