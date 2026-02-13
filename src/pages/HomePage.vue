@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import { useServers } from '@/composables/useServers'
+import { useI18n } from '@/i18n'
 import type { AdSlot, SortField, SortOrder } from '@/types'
+
+const { t } = useI18n()
 
 import AppHeader from '@/components/layout/AppHeader.vue'
 import AppFooter from '@/components/layout/AppFooter.vue'
@@ -94,14 +97,14 @@ onMounted(async () => {
             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
           </svg>
           <div>
-            <p class="text-sm font-medium text-red-300">เกิดข้อผิดพลาด</p>
+            <p class="text-sm font-medium text-red-300">{{ t.errorOccurred }}</p>
             <p class="text-xs text-red-400/70 mt-0.5">{{ error }}</p>
           </div>
           <button
             @click="refresh"
             class="ml-auto rounded-lg bg-red-800/50 px-3 py-1.5 text-xs text-red-300 hover:bg-red-800"
           >
-            ลองอีกครั้ง
+            {{ t.tryAgain }}
           </button>
         </div>
 
@@ -138,11 +141,9 @@ onMounted(async () => {
 
             <!-- Quick Info Card -->
             <div class="rounded-xl border border-surface-800 bg-surface-900/60 p-5">
-              <h3 class="text-sm font-semibold text-white mb-3">เกี่ยวกับ</h3>
+              <h3 class="text-sm font-semibold text-white mb-3">{{ t.about }}</h3>
               <p class="text-xs text-gray-500 leading-relaxed">
-                ค้นหาเซิร์ฟเวอร์ FiveM และ RedM
-                ที่ดีที่สุดจากทั่วโลก กรองตามประเทศ
-                จำนวนผู้เล่น และอื่นๆ
+                {{ t.aboutDescription }}
               </p>
               <div class="mt-4 space-y-2">
                 <a
@@ -151,7 +152,7 @@ onMounted(async () => {
                   rel="noopener noreferrer"
                   class="flex items-center gap-2 text-xs text-gray-400 hover:text-primary-400 transition-colors"
                 >
-                  <span>🎮</span> ดาวน์โหลด FiveM
+                  <span>🎮</span> {{ t.downloadFiveM }}
                 </a>
                 <a
                   href="https://redm.net"
@@ -159,7 +160,7 @@ onMounted(async () => {
                   rel="noopener noreferrer"
                   class="flex items-center gap-2 text-xs text-gray-400 hover:text-primary-400 transition-colors"
                 >
-                  <span>🤠</span> ดาวน์โหลด RedM
+                  <span>🤠</span> {{ t.downloadRedM }}
                 </a>
               </div>
             </div>

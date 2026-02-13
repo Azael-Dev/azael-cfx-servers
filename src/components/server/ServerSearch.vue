@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { useI18n } from '@/i18n'
+
+const { t } = useI18n()
+
 defineProps<{
   modelValue: string
   totalResults: number
@@ -26,12 +30,12 @@ function onInput(e: Event) {
       type="text"
       :value="modelValue"
       @input="onInput"
-      placeholder="ค้นหาเซิร์ฟเวอร์..."
+      :placeholder="t.searchPlaceholder"
       class="w-full rounded-xl border border-surface-700 bg-surface-900 py-3 pl-12 pr-24 text-sm text-white placeholder-gray-500 transition-all duration-200 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
     />
     <div class="absolute inset-y-0 right-0 flex items-center pr-4">
       <span v-if="!loading" class="text-xs text-gray-500">
-        {{ totalResults.toLocaleString() }} เซิร์ฟเวอร์
+        {{ totalResults.toLocaleString() }} {{ t.serversUnit }}
       </span>
       <svg v-else class="h-4 w-4 animate-spin text-primary-500" fill="none" viewBox="0 0 24 24">
         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />

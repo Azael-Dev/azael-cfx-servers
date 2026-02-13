@@ -2,6 +2,9 @@
 import { computed } from 'vue'
 import type { Server } from '@/types'
 import { renderHostname, formatNumber, getPlayerFillPercent, getFlagFromLocale, getConnectUrl } from '@/utils/helpers'
+import { useI18n } from '@/i18n'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   server: Server
@@ -149,7 +152,7 @@ const flag = computed(() => getFlagFromLocale(props.server.locale))
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M13 10V3L4 14h7v7l9-11h-7z" />
           </svg>
-          <span class="hidden sm:inline">เชื่อมต่อ</span>
+          <span class="hidden sm:inline">{{ t.connect }}</span>
         </a>
       </div>
     </div>

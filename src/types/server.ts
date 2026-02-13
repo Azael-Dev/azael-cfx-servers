@@ -90,7 +90,7 @@ export type SortOrder = 'asc' | 'desc'
 export interface SortOption {
   field: SortField
   order: SortOrder
-  label: string
+  labelKey: string
 }
 
 /** Filter state */

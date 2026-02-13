@@ -1,6 +1,6 @@
 import type { LocaleOption, SortOption } from '@/types'
 
-/** Available locale/country presets */
+/** Available locale/country presets (labels are native language names, not translated) */
 export const LOCALE_OPTIONS: LocaleOption[] = [
   { code: 'th_TH', label: 'ไทย', flag: '🇹🇭' },
   { code: 'en_US', label: 'English (US)', flag: '🇺🇸' },
@@ -19,17 +19,17 @@ export const LOCALE_OPTIONS: LocaleOption[] = [
   { code: 'zh_CN', label: '中文', flag: '🇨🇳' },
   { code: 'ja_JP', label: '日本語', flag: '🇯🇵' },
   { code: 'ko_KR', label: '한국어', flag: '🇰🇷' },
-  { code: '', label: 'ทั้งหมด (All)', flag: '🌐' },
+  { code: '', label: '', flag: '🌐' }, // label filled dynamically via i18n
 ]
 
-/** Sort option presets */
+/** Sort option presets (labelKey references TranslationSchema keys) */
 export const SORT_OPTIONS: SortOption[] = [
-  { field: 'players', order: 'desc', label: 'ผู้เล่น (มาก → น้อย)' },
-  { field: 'players', order: 'asc', label: 'ผู้เล่น (น้อย → มาก)' },
-  { field: 'name', order: 'asc', label: 'ชื่อ (A → Z)' },
-  { field: 'name', order: 'desc', label: 'ชื่อ (Z → A)' },
-  { field: 'upvotes', order: 'desc', label: 'Upvotes (มาก → น้อย)' },
-  { field: 'maxPlayers', order: 'desc', label: 'สล็อต (มาก → น้อย)' },
+  { field: 'players', order: 'desc', labelKey: 'sortPlayersDesc' },
+  { field: 'players', order: 'asc', labelKey: 'sortPlayersAsc' },
+  { field: 'name', order: 'asc', labelKey: 'sortNameAsc' },
+  { field: 'name', order: 'desc', labelKey: 'sortNameDesc' },
+  { field: 'upvotes', order: 'desc', labelKey: 'sortUpvotesDesc' },
+  { field: 'maxPlayers', order: 'desc', labelKey: 'sortSlotsDesc' },
 ]
 
 /** Default items per page */

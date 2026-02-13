@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { useI18n } from '@/i18n'
+
+const { t, tt } = useI18n()
 const currentYear = new Date().getFullYear()
 </script>
 
@@ -8,16 +11,15 @@ const currentYear = new Date().getFullYear()
       <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
         <!-- About -->
         <div>
-          <h3 class="text-sm font-semibold text-white mb-3">CFX Servers</h3>
+          <h3 class="text-sm font-semibold text-white mb-3">{{ t.siteTitle }}</h3>
           <p class="text-sm text-gray-500 leading-relaxed">
-            เว็บไซต์แสดงรายการเซิร์ฟเวอร์ FiveM และ RedM
-            ค้นหาเซิร์ฟเวอร์ที่ใช่สำหรับคุณ
+            {{ t.footerAbout }}
           </p>
         </div>
 
         <!-- Links -->
         <div>
-          <h3 class="text-sm font-semibold text-white mb-3">ลิงก์ที่เกี่ยวข้อง</h3>
+          <h3 class="text-sm font-semibold text-white mb-3">{{ t.relatedLinks }}</h3>
           <ul class="space-y-2 text-sm">
             <li>
               <a href="https://fivem.net" target="_blank" rel="noopener noreferrer"
@@ -43,7 +45,7 @@ const currentYear = new Date().getFullYear()
         <!-- Ad Slot: Footer -->
         <div>
           <div class="rounded-lg border border-dashed border-surface-700 bg-surface-900/50 p-4 text-center">
-            <p class="text-xs text-gray-600">Ad Space</p>
+            <p class="text-xs text-gray-600">{{ t.adSpace }}</p>
             <slot name="footer-ad"></slot>
           </div>
         </div>
@@ -51,10 +53,10 @@ const currentYear = new Date().getFullYear()
 
       <div class="mt-8 pt-6 border-t border-surface-800 flex flex-col sm:flex-row items-center justify-between gap-4">
         <p class="text-xs text-gray-600">
-          &copy; {{ currentYear }} CFX Servers. ข้อมูลจาก Cfx.re API
+          {{ tt('copyright', { year: currentYear }) }}
         </p>
         <p class="text-xs text-gray-600">
-          Not affiliated with Cfx.re or Rockstar Games
+          {{ t.disclaimer }}
         </p>
       </div>
     </div>

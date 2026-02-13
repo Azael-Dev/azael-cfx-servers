@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { formatNumber } from '@/utils/helpers'
+import { useI18n } from '@/i18n'
+
+const { t, timeLocale } = useI18n()
 
 defineProps<{
   serverCount: number
@@ -22,7 +25,7 @@ defineProps<{
           </svg>
         </div>
         <div>
-          <p class="text-xs text-gray-500">เซิร์ฟเวอร์</p>
+          <p class="text-xs text-gray-500">{{ t.statsServers }}</p>
           <p class="text-lg font-bold text-white" v-if="!loading">
             {{ formatNumber(serverCount) }}
           </p>
@@ -40,7 +43,7 @@ defineProps<{
           </svg>
         </div>
         <div>
-          <p class="text-xs text-gray-500">ผู้เล่น</p>
+          <p class="text-xs text-gray-500">{{ t.statsPlayers }}</p>
           <p class="text-lg font-bold text-white" v-if="!loading">
             {{ formatNumber(playerCount) }}
           </p>
@@ -59,7 +62,7 @@ defineProps<{
           </svg>
         </div>
         <div>
-          <p class="text-xs text-gray-500">สล็อตทั้งหมด</p>
+          <p class="text-xs text-gray-500">{{ t.statsTotalSlots }}</p>
           <p class="text-lg font-bold text-white" v-if="!loading">
             {{ formatNumber(totalSlots) }}
           </p>
@@ -78,9 +81,9 @@ defineProps<{
           </svg>
         </div>
         <div>
-          <p class="text-xs text-gray-500">อัปเดตล่าสุด</p>
+          <p class="text-xs text-gray-500">{{ t.statsLastUpdated }}</p>
           <p class="text-sm font-medium text-white" v-if="lastUpdated">
-            {{ lastUpdated.toLocaleTimeString('th-TH') }}
+            {{ lastUpdated.toLocaleTimeString(timeLocale) }}
           </p>
           <p class="text-sm text-gray-600" v-else>-</p>
         </div>

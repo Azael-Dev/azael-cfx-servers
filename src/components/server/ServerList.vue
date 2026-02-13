@@ -3,6 +3,9 @@ import type { Server, AdSlot } from '@/types'
 import ServerCard from './ServerCard.vue'
 import AdBanner from '@/components/layout/AdBanner.vue'
 import { computed } from 'vue'
+import { useI18n } from '@/i18n'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   servers: Server[]
@@ -73,8 +76,8 @@ const inlineAdSlot: AdSlot = {
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
               d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
       </svg>
-      <p class="text-lg font-medium text-gray-400">ไม่พบเซิร์ฟเวอร์</p>
-      <p class="mt-1 text-sm text-gray-600">ลองเปลี่ยนตัวกรองหรือคำค้นหา</p>
+      <p class="text-lg font-medium text-gray-400">{{ t.noServersFound }}</p>
+      <p class="mt-1 text-sm text-gray-600">{{ t.noServersSuggestion }}</p>
     </div>
   </div>
 </template>

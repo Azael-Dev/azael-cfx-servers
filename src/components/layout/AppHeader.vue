@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { GameType, PlayerCounts } from '@/types'
+import type { Locale } from '@/i18n/types'
 import { formatNumber } from '@/utils/helpers'
+import { useI18n } from '@/i18n'
+
+const { t, currentLocale, setLocale, availableLocales } = useI18n()
 
 const props = defineProps<{
   gameType: GameType
@@ -28,9 +32,9 @@ const currentCount = computed(() =>
           </div>
           <div class="hidden sm:block">
             <h1 class="text-lg font-bold text-white group-hover:text-primary-400 transition-colors">
-              CFX Servers
+              {{ t.siteTitle }}
             </h1>
-            <p class="text-xs text-gray-500 -mt-0.5">FiveM & RedM Server List</p>
+            <p class="text-xs text-gray-500 -mt-0.5">{{ t.siteSubtitle }}</p>
           </div>
         </router-link>
 
@@ -64,12 +68,34 @@ const currentCount = computed(() =>
           <!-- Player count badge -->
           <div v-if="currentCount > 0" class="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-900 border border-surface-800">
             <span class="h-2 w-2 rounded-full bg-online animate-pulse"></span>
-            <span class="text-sm text-gray-300">{{ formatNumber(currentCount) }} ออนไลน์</span>
+            <span class="text-sm text-gray-300">{{ formatNumber(currentCount) }} {{ t.online }}</span>
           </div>
         </div>
 
         <!-- Right section -->
         <div class="flex items-center gap-3">
+          <!-- Language Switcher -->
+          <div class="relative">
+            <select
+              :value="currentLocale"
+              @change="setLocale(($event.target as HTMLSelectElement).value as Locale)"
+              class="appearance-none rounded-lg border border-surface-700 bg-surface-900 px-3 py-1.5 pr-8 text-sm text-gray-300 transition-colors focus:border-primary-500 focus:outline-none cursor-pointer"
+            >
+              <option
+                v-for="loc in availableLocales"
+                :key="loc.code"
+                :value="loc.code"
+              >
+                {{ loc.flag }} {{ loc.label }}
+              </option>
+            </select>
+            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+              <svg class="h-3.5 w-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+          </div>
+
           <a
             href="https://github.com"
             target="_blank"
