@@ -57,6 +57,11 @@ const th: TranslationSchema = {
   aboutDescription: 'ค้นหาเซิร์ฟเวอร์ FiveM และ RedM ที่ดีที่สุดจากทั่วโลก กรองตามประเทศ จำนวนผู้เล่น และอื่นๆ',
   downloadFiveM: 'ดาวน์โหลด FiveM',
   downloadRedM: 'ดาวน์โหลด RedM',
+
+  // Footer links
+  fivemOfficial: 'เว็บไซต์ทางการ FiveM',
+  redmOfficial: 'เว็บไซต์ทางการ RedM',
+  cfxForum: 'ฟอรั่ม Cfx.re',
 }
 
 export default th

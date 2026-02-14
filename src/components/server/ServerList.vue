@@ -2,7 +2,6 @@
 import type { Server, AdSlot } from '@/types'
 import ServerCard from './ServerCard.vue'
 import AdBanner from '@/components/layout/AdBanner.vue'
-import { computed } from 'vue'
 import { useI18n } from '@/i18n'
 
 const { t } = useI18n()
@@ -13,8 +12,6 @@ const props = defineProps<{
   currentPage: number
   perPage: number
 }>()
-
-const startRank = computed(() => (props.currentPage - 1) * props.perPage + 1)
 
 /** Inline ad config - show ads every N servers */
 const inlineAdInterval = 10
@@ -62,7 +59,6 @@ const inlineAdSlot: AdSlot = {
 
         <ServerCard
           :server="server"
-          :rank="startRank + index"
         />
       </template>
     </template>

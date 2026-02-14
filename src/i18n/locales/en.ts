@@ -57,6 +57,11 @@ const en: TranslationSchema = {
   aboutDescription: 'Find the best FiveM and RedM servers worldwide. Filter by country, player count, and more.',
   downloadFiveM: 'Download FiveM',
   downloadRedM: 'Download RedM',
+
+  // Footer links
+  fivemOfficial: 'FiveM Official',
+  redmOfficial: 'RedM Official',
+  cfxForum: 'Cfx.re Forum',
 }
 
 export default en

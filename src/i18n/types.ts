@@ -57,6 +57,11 @@ export interface TranslationSchema {
   aboutDescription: string
   downloadFiveM: string
   downloadRedM: string
+
+  // Footer links
+  fivemOfficial: string
+  redmOfficial: string
+  cfxForum: string
 }
 
 export type Translations = Record<Locale, TranslationSchema>

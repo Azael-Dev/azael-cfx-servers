@@ -83,7 +83,7 @@ const handleLocaleChange = (event: Event) => {
               <img
                 :src="`https://flagcdn.com/w40/${availableLocales.find(l => l.code === currentLocale)?.countryCode}.png`"
                 :alt="currentLocale"
-                class="h-4 w-auto rounded-sm"
+                class="h-3 w-5 rounded-sm object-cover"
                 loading="lazy"
               />
             </div>

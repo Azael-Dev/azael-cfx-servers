@@ -24,19 +24,19 @@ const currentYear = new Date().getFullYear()
             <li>
               <a href="https://fivem.net" target="_blank" rel="noopener noreferrer"
                  class="text-gray-500 hover:text-primary-400 transition-colors">
-                FiveM Official
+                {{ t.fivemOfficial }}
               </a>
             </li>
             <li>
               <a href="https://redm.net" target="_blank" rel="noopener noreferrer"
                  class="text-gray-500 hover:text-primary-400 transition-colors">
-                RedM Official
+                {{ t.redmOfficial }}
               </a>
             </li>
             <li>
               <a href="https://forum.cfx.re" target="_blank" rel="noopener noreferrer"
                  class="text-gray-500 hover:text-primary-400 transition-colors">
-                Cfx.re Forum
+                {{ t.cfxForum }}
               </a>
             </li>
           </ul>

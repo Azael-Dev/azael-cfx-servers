@@ -73,6 +73,15 @@ export function normalizeServer(raw: CfxServer): Server {
 
   const displayName = vars['sv_projectName'] || vars['sv_projectDesc'] || data.hostname || ''
 
+  // Generate icon and banner URLs from iconVersion
+  const iconVersion = data.iconVersion || 0
+  const iconUrl = iconVersion > 0
+    ? `https://servers-frontend.fivem.net/api/servers/icon/${raw.EndPoint}/${iconVersion}.png`
+    : ''
+  const bannerUrl = iconVersion > 0
+    ? `https://servers-frontend.fivem.net/api/servers/banner/${raw.EndPoint}/${iconVersion}.png`
+    : ''
+
   return {
     id: raw.EndPoint,
     endpoint: raw.EndPoint,
@@ -96,8 +105,8 @@ export function normalizeServer(raw: CfxServer): Server {
     enforceGameBuild: vars['sv_enforceGameBuild'] || '',
     onesyncEnabled: vars['onesync_enabled'] === 'true' || vars['onesync_enabled'] === '1',
     server: data.server || '',
-    iconUrl: '',
-    bannerUrl: '',
+    iconUrl,
+    bannerUrl,
     projectName: vars['sv_projectName'] || '',
     projectDescription: vars['sv_projectDesc'] || '',
     connectEndPoints: data.connectEndPoints || [],
