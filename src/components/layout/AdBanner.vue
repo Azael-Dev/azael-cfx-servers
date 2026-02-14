@@ -56,6 +56,25 @@ const loadAdsterraScript = async () => {
   let width = 0
   let height = 0
 
+  // Footer banner (static image link)
+  if (props.adSlot.position === 'footer' && props.adSlot.id === 'footer-banner') {
+    const link = document.createElement('a')
+    link.href = 'https://beta.publishers.adsterra.com/referral/cYffQLq5Qy'
+    link.target = '_blank'
+    link.rel = 'nofollow noopener noreferrer'
+
+    const img = document.createElement('img')
+    img.alt = 'banner'
+    img.src = 'https://landings-cdn.adsterratech.com/referralBanners/gif/720x90_adsterra_reff.gif'
+    img.style.maxWidth = '100%'
+    img.style.height = 'auto'
+    img.style.display = 'block'
+
+    link.appendChild(img)
+    adContainer.value.appendChild(link)
+    return
+  }
+
   // Leaderboard ads (728x90) for header-banner and inline-server-list
   if (
     props.adSlot.size === 'leaderboard' &&
@@ -92,7 +111,7 @@ onMounted(() => {
     :class="[
       'rounded-lg border border-dashed border-surface-700 bg-surface-900/50 overflow-hidden',
       {
-        'h-[90px]': adSlot.size === 'banner',
+        'h-[90px]': adSlot.size === 'banner' && adSlot.position !== 'footer',
         'h-[90px] w-full': adSlot.size === 'leaderboard',
         'h-[250px] w-[300px]': adSlot.size === 'rectangle',
         'h-[600px] w-[160px]': adSlot.size === 'skyscraper',
@@ -100,7 +119,7 @@ onMounted(() => {
     ]"
   >
     <!-- Adsterra Ad Container -->
-    <div ref="adContainer" class="flex items-center justify-center h-full"></div>
+    <div ref="adContainer" :class="adSlot.position === 'footer' ? '' : 'flex items-center justify-center h-full'"></div>
 
     <!-- OLD CODE - Placeholder (commented out)
     <div class="flex items-center justify-center h-full text-gray-600">
