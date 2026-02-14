@@ -47,15 +47,15 @@ export function useServerIcon(endpoint: string, fallbackBanner: string) {
 
         const data = server.Data
         const vars = data.vars || {}
-        const iv = data.iconVersion || parseInt(vars['iconVersion'] || '0', 10) || 0
+        const iv = data.iconVersion || parseInt(vars['iconVersion'] || '0', 10) || null
 
-        const resolvedIcon = iv > 0
+        const resolvedIcon = iv
             ? `https://servers-frontend.fivem.net/api/servers/icon/${endpoint}/${iv}.png`
             : ''
 
         const resolvedBanner = vars['banner_detail']
             || vars['banner_connecting']
-            || (iv > 0 ? `https://servers-frontend.fivem.net/api/servers/banner/${endpoint}` : '')
+            || fallbackBanner
 
         iconUrl.value = resolvedIcon
         if (resolvedBanner) bannerUrl.value = resolvedBanner
@@ -63,7 +63,7 @@ export function useServerIcon(endpoint: string, fallbackBanner: string) {
         // Cache for reuse (e.g. when paginating back)
         iconCache.set(endpoint, {
             iconUrl: resolvedIcon,
-            bannerUrl: resolvedBanner || fallbackBanner,
+            bannerUrl: resolvedBanner,
         })
         } catch {
         // silently fail — fallback SVG will show

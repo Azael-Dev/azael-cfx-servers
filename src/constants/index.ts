@@ -51,9 +51,6 @@ export const API = {
   /** Server icon */
   SERVER_ICON: (endpoint: string, iconVersion: number) =>
     `https://servers-frontend.fivem.net/api/servers/icon/${endpoint}/${iconVersion}.png`,
-  /** Server banner */
-  SERVER_BANNER: (serverId: string) =>
-    `https://servers-frontend.fivem.net/api/servers/banner/${serverId}`,
 } as const
 
 /** Cache duration in milliseconds (5 minutes) */
