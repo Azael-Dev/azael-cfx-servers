@@ -58,3 +58,9 @@ export const CACHE_DURATION = 5 * 60 * 1000
 
 /** Refresh interval for server list (60 seconds) */
 export const REFRESH_INTERVAL = 60 * 1000
+
+/** Social media links */
+export const SOCIAL_LINKS = {
+  GITHUB: 'https://portal.azael.dev/links/github',
+  DISCORD: 'https://portal.azael.dev/links/discord',
+} as const
