@@ -75,6 +75,7 @@ const inlineAdSlot: AdSlot = {
         <!-- Inline Ad - every N items -->
         <AdBanner
           v-if="index > 0 && index % inlineAdInterval === 0"
+          :key="`ad-${index}`"
           :ad-slot="inlineAdSlot"
         />
 

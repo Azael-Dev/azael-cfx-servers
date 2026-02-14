@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 import type { AdSlot } from '@/types'
 
 const props = defineProps<{
@@ -8,8 +8,13 @@ const props = defineProps<{
 
 const adContainer = ref<HTMLDivElement | null>(null)
 
+// Unique instance ID to prevent browser script caching
+const instanceId = Date.now() + Math.random().toString(36).substring(2, 9)
+
 // Function to load Adsterra script
-const loadAdsterraScript = () => {
+const loadAdsterraScript = async () => {
+  await nextTick()
+  
   if (!adContainer.value) return
 
   // Clear previous content
@@ -19,8 +24,9 @@ const loadAdsterraScript = () => {
   if (props.adSlot.size === 'leaderboard' && 
       (props.adSlot.id === 'header-banner' || props.adSlot.id === 'inline-server-list')) {
     
-    // Create config script
+    // Set atOptions globally before loading the script
     const configScript = document.createElement('script')
+    configScript.type = 'text/javascript'
     configScript.textContent = `
       atOptions = {
         'key' : 'b8125a056372ff94d6b97e54f84d4f62',
@@ -32,16 +38,18 @@ const loadAdsterraScript = () => {
     `
     adContainer.value.appendChild(configScript)
 
-    // Create invoke script
+    // Load the invoke script with unique query param to prevent caching
     const invokeScript = document.createElement('script')
-    invokeScript.src = 'https://www.highperformanceformat.com/b8125a056372ff94d6b97e54f84d4f62/invoke.js'
+    invokeScript.type = 'text/javascript'
+    invokeScript.src = `https://www.highperformanceformat.com/b8125a056372ff94d6b97e54f84d4f62/invoke.js?t=${instanceId}`
     adContainer.value.appendChild(invokeScript)
   }
   // Rectangle ads (300x250) for sidebar
   else if (props.adSlot.size === 'rectangle' && props.adSlot.id === 'sidebar-rect') {
     
-    // Create config script
+    // Set atOptions globally before loading the script
     const configScript = document.createElement('script')
+    configScript.type = 'text/javascript'
     configScript.textContent = `
       atOptions = {
         'key' : '9a262d58d722a366f3ae4b3b4ae408d4',
@@ -53,9 +61,10 @@ const loadAdsterraScript = () => {
     `
     adContainer.value.appendChild(configScript)
 
-    // Create invoke script
+    // Load the invoke script with unique query param to prevent caching
     const invokeScript = document.createElement('script')
-    invokeScript.src = 'https://www.highperformanceformat.com/9a262d58d722a366f3ae4b3b4ae408d4/invoke.js'
+    invokeScript.type = 'text/javascript'
+    invokeScript.src = `https://www.highperformanceformat.com/9a262d58d722a366f3ae4b3b4ae408d4/invoke.js?t=${instanceId}`
     adContainer.value.appendChild(invokeScript)
   }
 }
@@ -63,11 +72,6 @@ const loadAdsterraScript = () => {
 onMounted(() => {
   loadAdsterraScript()
 })
-
-// Reload script when adSlot changes
-watch(() => props.adSlot, () => {
-  loadAdsterraScript()
-}, { deep: true })
 </script>
 
 <template>
