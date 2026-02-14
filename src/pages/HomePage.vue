@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, watch } from 'vue'
 import { useServers } from '@/composables/useServers'
+import { useSeo } from '@/composables/useSeo'
 import { useI18n } from '@/i18n'
 import type { AdSlot, SortField, SortOrder } from '@/types'
 
 const { t } = useI18n()
+const { updateSeo, updateStructuredData } = useSeo()
 
 import AppHeader from '@/components/layout/AppHeader.vue'
 import AppFooter from '@/components/layout/AppFooter.vue'
@@ -42,8 +44,19 @@ function handleSortUpdate(field: SortField, order: SortOrder) {
 }
 
 onMounted(async () => {
+  updateSeo()
   await loadServers()
   startAutoRefresh()
+})
+
+// Update structured data when stats change
+watch(stats, (newStats) => {
+  if (newStats.serverCount > 0) {
+    updateStructuredData({
+      serverCount: newStats.serverCount,
+      playerCount: newStats.playerCount,
+    })
+  }
 })
 </script>
 
