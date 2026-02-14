@@ -159,8 +159,8 @@ export function formatNumber(num: number): string {
 }
 
 /** Generate cfx.re connect URL */
-export function getConnectUrl(endpoint: string): string {
-  return `https://cfx.re/join/${endpoint}`
+export function getConnectUrl(gameType: GameType, endpoint: string): string {
+  return `${gameType}://connect/cfx.re/join/${endpoint}`
 }
 
 /** Truncate text with ellipsis */

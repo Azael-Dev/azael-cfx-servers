@@ -181,9 +181,7 @@ watch(bannerUrl, (url) => {
       <!-- Connect button (hidden on small screens) -->
       <div class="hidden md:flex flex-shrink-0">
         <a
-          :href="getConnectUrl(server.id)"
-          target="_blank"
-          rel="noopener noreferrer"
+          :href="getConnectUrl(server.gameType, server.id)"
           class="flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-1.5 text-xs font-medium text-white shadow-lg shadow-primary-600/20 transition-all duration-200 hover:bg-primary-500 hover:shadow-primary-500/30 active:scale-95"
         >
           <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
