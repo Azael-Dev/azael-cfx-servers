@@ -19,7 +19,10 @@ A modern web application to browse FiveM and RedM server lists with search, filt
 - 📊 Real-time online player statistics
 - 🌙 Modern dark mode UI
 - 📱 Fully responsive design
-- 📢 Built-in ad slot support (Google AdSense, etc.)
+- 🌐 Multi-language support (English & Thai) with auto-detection
+- 🔎 SEO optimized (meta tags, Open Graph, JSON-LD, sitemap)
+- 📢 Adsterra ad integration (leaderboard, rectangle, banner)
+- 🛡️ Ad blocker detection with user notification
 - ♻️ Auto-refresh data every 60 seconds
 - 🧩 Extensible architecture for future growth
 
@@ -68,23 +71,53 @@ This project auto-deploys via GitHub Actions on every push to the `main` branch.
 ```
 src/
 ├── components/
-│   ├── common/          # Shared UI components
-│   ├── layout/          # Header, Footer, Ad components
-│   └── server/          # Server-specific components
-├── composables/         # Vue composables (state management)
+│   ├── common/          # Shared UI (Loading, Pagination, StatsBar, AdBlockDetector)
+│   ├── layout/          # Header, Footer, AdBanner
+│   └── server/          # Server card, list, search, filters
+├── composables/         # Vue composables
+│   ├── useServers.ts    # Server data & filtering
+│   ├── useServerIcon.ts # Lazy-load server icons
+│   ├── useSeo.ts        # Dynamic SEO meta tags
+│   └── useAdBlock.ts    # Ad blocker detection state
 ├── constants/           # Configuration & constants
+├── i18n/                # Internationalization (EN/TH)
+│   ├── locales/         # Translation files
+│   └── types.ts         # Translation schema
 ├── pages/               # Page components
 ├── router/              # Vue Router config
 ├── services/            # API service layer
 ├── types/               # TypeScript type definitions
 └── utils/               # Helper utilities
+public/
+├── robots.txt           # Search engine crawling rules
+├── sitemap.xml          # Sitemap for SEO
+└── images/              # Static images
 ```
 
-## Adding Ads
+## Ad Integration
 
-1. Edit `index.html` — add your AdSense script in `<head>`
-2. Edit `AdBanner.vue` — replace the placeholder with real ad code
-3. Configure ad slots in `HomePage.vue` (header, sidebar, inline, footer)
+Ads are managed centrally through `AdBanner.vue`. Current ad slots:
+
+| Slot | Size | Location | Type |
+|---|---|---|---|
+| `header-banner` | 728×90 | Top of page | Adsterra iframe |
+| `inline-server-list` | 728×90 | Between server cards (every 10) | Adsterra iframe |
+| `sidebar-rect` | 300×250 | Desktop sidebar | Adsterra iframe |
+| `footer-banner` | 720×90 | Footer | Static banner |
+
+### Configuring ads:
+1. Edit `AdBanner.vue` — update Adsterra keys or replace with other ad code
+2. Configure ad slots in `HomePage.vue` and `AppFooter.vue`
+3. Ad blocker detection is handled by `AdBlockDetector.vue` with a modal notification
+
+## SEO
+
+- **Meta tags**: title, description, keywords (EN+TH), robots
+- **Open Graph / Twitter**: sharing previews with image
+- **JSON-LD**: WebSite (with SearchAction) + WebApplication structured data
+- **Dynamic**: meta tags update automatically when language is switched
+- **Sitemap & robots.txt**: located in `public/`
+- **Hreflang**: `en`, `th`, `x-default` for multi-language support
 
 ## License
 
