@@ -54,3 +54,10 @@
 button {
   cursor: pointer;
 }
+
+/* Shimmer skeleton animation */
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
