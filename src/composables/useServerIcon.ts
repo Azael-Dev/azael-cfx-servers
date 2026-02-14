@@ -3,7 +3,7 @@ import { fetchSingleServer } from '@/services/api'
 import { API } from '@/constants';
 
 /** In-memory icon cache shared across all ServerCard instances */
-const iconCache = new Map<string, { iconUrl: string; bannerUrl: string }>()
+const iconCache = new Map<string, { iconUrl: string; bannerUrl: string; upvotePower: number; burstPower: number }>()
 
 /**
  * Lazy-load server icon & banner via the single-server JSON API.
@@ -12,9 +12,11 @@ const iconCache = new Map<string, { iconUrl: string; bannerUrl: string }>()
  * so we fetch `/api/servers/single/{endpoint}` only for servers
  * that are actually visible on screen (Intersection Observer).
  */
-export function useServerIcon(endpoint: string, fallbackBanner: string) {
+export function useServerIcon(endpoint: string, fallbackBanner: string, initialUpvotePower = 0, initialBurstPower = 0) {
     const iconUrl = ref('')
     const bannerUrl = ref(fallbackBanner)
+    const upvotePower = ref(initialUpvotePower)
+    const burstPower = ref(initialBurstPower)
     const loading = ref(false)
 
     /** Check cache first */
@@ -22,6 +24,8 @@ export function useServerIcon(endpoint: string, fallbackBanner: string) {
     if (cached) {
         iconUrl.value = cached.iconUrl
         if (cached.bannerUrl) bannerUrl.value = cached.bannerUrl
+        upvotePower.value = cached.upvotePower
+        burstPower.value = cached.burstPower
     }
 
     /** Intersection Observer ref — set this on the card root element */
@@ -38,6 +42,8 @@ export function useServerIcon(endpoint: string, fallbackBanner: string) {
         const c = iconCache.get(endpoint)!
         iconUrl.value = c.iconUrl
         if (c.bannerUrl) bannerUrl.value = c.bannerUrl
+        upvotePower.value = c.upvotePower
+        burstPower.value = c.burstPower
         return
         }
 
@@ -53,14 +59,20 @@ export function useServerIcon(endpoint: string, fallbackBanner: string) {
         const resolvedBanner = vars['banner_detail']
             || vars['banner_connecting']
             || fallbackBanner
+        const resolvedUpvotePower = data.upvotePower || 0
+        const resolvedBurstPower = data.burstPower || 0
 
         iconUrl.value = resolvedIcon
         if (resolvedBanner) bannerUrl.value = resolvedBanner
+        upvotePower.value = resolvedUpvotePower
+        burstPower.value = resolvedBurstPower
 
         // Cache for reuse (e.g. when paginating back)
         iconCache.set(endpoint, {
             iconUrl: resolvedIcon,
             bannerUrl: resolvedBanner,
+            upvotePower: resolvedUpvotePower,
+            burstPower: resolvedBurstPower,
         })
         } catch {
         // silently fail — fallback SVG will show
@@ -102,6 +114,8 @@ export function useServerIcon(endpoint: string, fallbackBanner: string) {
         cardRef,
         iconUrl,
         bannerUrl,
+        upvotePower,
+        burstPower,
         iconLoading: loading,
     }
 }

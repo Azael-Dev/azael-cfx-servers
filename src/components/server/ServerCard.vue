@@ -41,9 +41,11 @@ const flagSrc = computed(() => getFlagUrl(props.server.locale))
 const serverGradient = computed(() => getServerGradient(props.server.endpoint))
 
 /** Lazy-load icon & banner from single-server API */
-const { cardRef, iconUrl, bannerUrl, iconLoading } = useServerIcon(
+const { cardRef, iconUrl, bannerUrl, upvotePower, burstPower, iconLoading } = useServerIcon(
   props.server.endpoint,
   props.server.bannerUrl,
+  props.server.upvotePower,
+  props.server.burstPower,
 )
 
 /** Icon error handling */
@@ -141,13 +143,13 @@ watch(bannerUrl, (url) => {
 
         <!-- Upvotes -->
         <span
-          v-if="server.upvotePower > 0"
-          class="inline-flex items-center gap-0.5 rounded-md bg-rose-900/30 px-1.5 py-0.5 text-xs text-rose-400"
+          v-if="upvotePower > 1"
+          class="inline-flex items-center gap-0.5 rounded-md bg-amber-900/30 px-1.5 py-0.5 text-xs text-amber-400"
         >
           <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
           </svg>
-          {{ server.upvotePower }}
+          {{ upvotePower }}
         </span>
 
         <!-- Locale flag -->
