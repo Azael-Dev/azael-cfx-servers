@@ -1,8 +1,37 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useI18n } from '@/i18n'
 
 const { t, tt } = useI18n()
-const currentYear = new Date().getFullYear()
+
+const copyrightYear = computed(() => {
+    return new Date().getFullYear()
+})
+
+const copyrightOwner = computed(() => {
+    const host = window.location.hostname
+
+    if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host)) {
+        return host
+    }
+
+    const parts = host.split('.')
+    if (parts.length < 2) return host
+
+    const name = parts[parts.length - 2]
+    const tld  = parts[parts.length - 1]
+
+    const titleName = name
+        .split(/[-_]/)
+        .map(s => s.charAt(0).toUpperCase() + s.slice(1))
+        .join(' ')
+
+    if (tld === 'dev') {
+        return `${titleName} ${tld.charAt(0).toUpperCase() + tld.slice(1)}`
+    }
+
+    return titleName
+})
 </script>
 
 <template>
@@ -53,7 +82,7 @@ const currentYear = new Date().getFullYear()
 
       <div class="mt-8 pt-6 border-t border-surface-800 flex flex-col sm:flex-row items-center justify-between gap-4">
         <p class="text-xs text-gray-600">
-          {{ tt('copyright', { year: currentYear }) }}
+          &copy;{{ tt('copyright', { year: copyrightYear, owner: copyrightOwner }) }}
         </p>
         <p class="text-xs text-gray-600">
           {{ t.disclaimer }}

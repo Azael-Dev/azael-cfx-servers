@@ -9,7 +9,7 @@ const en: TranslationSchema = {
   // Footer
   footerAbout: 'Browse FiveM and RedM servers. Find the right server for you.',
   relatedLinks: 'Related Links',
-  copyright: '© {year} CFX Servers. Data from Cfx.re API',
+  copyright: '{year} {owner}, All rights reserved.',
   disclaimer: 'Not affiliated with Cfx.re or Rockstar Games',
   adSpace: 'Ad Space',
 

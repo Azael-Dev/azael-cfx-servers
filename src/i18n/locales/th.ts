@@ -9,7 +9,7 @@ const th: TranslationSchema = {
   // Footer
   footerAbout: 'เว็บไซต์แสดงรายการเซิร์ฟเวอร์ FiveM และ RedM ค้นหาเซิร์ฟเวอร์ที่ใช่สำหรับคุณ',
   relatedLinks: 'ลิงก์ที่เกี่ยวข้อง',
-  copyright: '© {year} CFX Servers. ข้อมูลจาก Cfx.re API',
+  copyright: '{year} {owner}, สงวนลิขสิทธิ์ทุกประการ',
   disclaimer: 'ไม่มีส่วนเกี่ยวข้องกับ Cfx.re หรือ Rockstar Games',
   adSpace: 'พื้นที่โฆษณา',
 
