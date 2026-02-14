@@ -108,7 +108,7 @@ watch(bannerUrl, (url) => {
           v-html="renderedHostname"
         ></h3>
         <!-- Subtitle -->
-        <p v-if="subtitle" class="mt-0.5 truncate text-xs text-gray-500 max-w-[260px]">
+        <p v-if="subtitle" class="mt-0.5 truncate text-xs text-gray-500">
           {{ subtitle }}
         </p>
       </div>
@@ -118,7 +118,7 @@ watch(bannerUrl, (url) => {
         <!-- Game type -->
         <span
           v-if="server.gametype"
-          class="inline-flex items-center rounded-md bg-surface-800/80 px-1.5 py-0.5 text-xs text-gray-500 max-w-[90px] truncate"
+          class="inline-flex items-center rounded-md bg-surface-800/80 px-1.5 py-0.5 text-xs text-gray-500 truncate"
         >
           {{ server.gametype }}
         </span>
@@ -126,7 +126,7 @@ watch(bannerUrl, (url) => {
         <!-- Map -->
         <span
           v-if="server.mapname"
-          class="inline-flex items-center gap-1 rounded-md bg-surface-800/80 px-1.5 py-0.5 text-xs text-gray-500 max-w-[90px] truncate"
+          class="inline-flex items-center gap-1 rounded-md bg-surface-800/80 px-1.5 py-0.5 text-xs text-gray-500 truncate"
         >
           {{ server.mapname }}
         </span>
