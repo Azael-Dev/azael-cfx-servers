@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import type { Server } from '@/types'
-import { renderHostname, formatNumber, getPlayerFillPercent, getFlagUrl, getConnectUrl, getServerColor, getServerInitial } from '@/utils/helpers'
+import { renderHostname, formatNumber, getPlayerFillPercent, getFlagUrl, getConnectUrl, getServerGradient } from '@/utils/helpers'
 import { useI18n } from '@/i18n'
 import { useServerIcon } from '@/composables/useServerIcon'
 
@@ -38,9 +38,8 @@ const subtitle = computed(() =>
 
 const flagSrc = computed(() => getFlagUrl(props.server.locale))
 
-/** Deterministic color & initial for icon fallback */
-const serverColor = computed(() => getServerColor(props.server.endpoint))
-const serverInitial = computed(() => getServerInitial(props.server.projectName || props.server.hostname))
+/** Deterministic gradient for icon fallback */
+const serverGradient = computed(() => getServerGradient(props.server.endpoint))
 
 /** Lazy-load icon & banner from single-server API */
 const { cardRef, iconUrl, bannerUrl, iconLoading } = useServerIcon(
@@ -84,7 +83,7 @@ watch(bannerUrl, (url) => {
       <!-- Server Icon -->
       <div class="flex-shrink-0">
         <div class="h-12 w-12 rounded-lg flex items-center justify-center overflow-hidden"
-             :style="{ backgroundColor: (!iconUrl || iconError) && !iconLoading ? serverColor : undefined }"
+             :style="{ background: (!iconUrl || iconError) && !iconLoading ? serverGradient : undefined }"
              :class="{ 'bg-surface-800': (iconUrl && !iconError) || iconLoading }"
         >
           <img
@@ -97,8 +96,6 @@ watch(bannerUrl, (url) => {
           />
           <!-- Loading shimmer -->
           <div v-else-if="iconLoading" class="h-full w-full animate-pulse bg-surface-700"></div>
-          <!-- Colored initial fallback -->
-          <span v-else class="text-lg font-bold text-white/90 select-none">{{ serverInitial }}</span>
         </div>
       </div>
 

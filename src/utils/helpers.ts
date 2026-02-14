@@ -174,27 +174,17 @@ export function truncate(text: string, maxLength: number): string {
 }
 
 /**
- * Generate a deterministic HSL color from a string (like servers.fivem.net).
- * Same endpoint always produces the same color.
+ * Generate a deterministic gradient from a string (like servers.fivem.net).
+ * Same endpoint always produces the same gradient.
  */
-export function getServerColor(str: string): string {
+export function getServerGradient(str: string): string {
   let hash = 0
   for (let i = 0; i < str.length; i++) {
     hash = str.charCodeAt(i) + ((hash << 5) - hash)
-    hash |= 0 // Convert to 32bit int
+    hash |= 0
   }
-  const hue = ((hash % 360) + 360) % 360
-  return `hsl(${hue}, 55%, 45%)`
-}
-
-/**
- * Get the first meaningful character for the server icon fallback.
- * Strips color codes and returns uppercase initial.
- */
-export function getServerInitial(name: string): string {
-  const clean = cleanHostname(name).trim()
-  if (!clean) return '?'
-  // Get first alphanumeric character
-  const match = clean.match(/[a-zA-Z0-9]/)
-  return match ? match[0].toUpperCase() : clean[0]!.toUpperCase()
+  const hue1 = ((hash % 360) + 360) % 360
+  const hue2 = (hue1 + 40 + ((hash >> 8) % 80)) % 360
+  const angle = ((hash >> 16) % 360 + 360) % 360
+  return `linear-gradient(${angle}deg, hsl(${hue1}, 60%, 40%), hsl(${hue2}, 50%, 50%))`
 }
