@@ -91,9 +91,17 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
           </div>
 
           <!-- Player count badge -->
-          <div v-if="currentCount > 0" class="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-900 border border-surface-800">
-            <span class="h-2 w-2 rounded-full bg-online animate-pulse"></span>
-            <span class="text-sm text-gray-300">{{ formatNumber(currentCount) }} {{ t.online }}</span>
+          <div v-if="currentCount > 0" class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-primary-600/10 to-primary-500/10 border border-primary-600/20 backdrop-blur-sm">
+            <div class="relative flex items-center justify-center">
+              <span class="absolute h-3 w-3 rounded-full bg-emerald-500 animate-ping opacity-75"></span>
+              <svg class="relative h-4 w-4 text-emerald-400" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/>
+              </svg>
+            </div>
+            <div class="flex items-baseline gap-1">
+              <span class="text-sm font-semibold text-gray-300">{{ formatNumber(currentCount) }}</span>
+              <span class="text-xs text-gray-400">{{ t.online }}</span>
+            </div>
           </div>
         </div>
 
