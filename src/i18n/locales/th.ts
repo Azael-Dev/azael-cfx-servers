@@ -62,6 +62,11 @@ const th: TranslationSchema = {
   fivemOfficial: 'เว็บไซต์ทางการ FiveM',
   redmOfficial: 'เว็บไซต์ทางการ RedM',
   cfxForum: 'ฟอรั่ม Cfx.re',
+
+  // Ad blocker
+  adBlockTitle: 'ตรวจพบตัวบล็อกโฆษณา',
+  adBlockMessage: 'เว็บไซต์นี้ให้บริการฟรีและอาศัยรายได้จากโฆษณา กรุณาปิดตัวบล็อกโฆษณาเพื่อสนับสนุนเรา',
+  adBlockDismiss: 'รับทราบ',
 }
 
 export default th

@@ -62,6 +62,11 @@ export interface TranslationSchema {
   fivemOfficial: string
   redmOfficial: string
   cfxForum: string
+
+  // Ad blocker
+  adBlockTitle: string
+  adBlockMessage: string
+  adBlockDismiss: string
 }
 
 export type Translations = Record<Locale, TranslationSchema>

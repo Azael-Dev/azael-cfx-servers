@@ -62,6 +62,11 @@ const en: TranslationSchema = {
   fivemOfficial: 'FiveM Official',
   redmOfficial: 'RedM Official',
   cfxForum: 'Cfx.re Forum',
+
+  // Ad blocker
+  adBlockTitle: 'Ad Blocker Detected',
+  adBlockMessage: 'This site is free and relies on ad revenue to stay online. Please consider disabling your ad blocker to support us.',
+  adBlockDismiss: 'I understand',
 }
 
 export default en
