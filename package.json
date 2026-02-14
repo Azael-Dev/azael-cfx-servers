@@ -1,10 +1,10 @@
 {
-  "name": "cfx-servers.azael",
+  "name": "azael-cfx-servers",
   "version": "1.0.0",
-  "description": "Frontend for cfx-servers.azael.dev",
+  "description": "Frontend for servers.azael.dev",
   "author": "Azael Dev",
   "license": "SEE LICENSE IN LICENSE",
-  "homepage": "https://cfx-servers.azael.dev",
+  "homepage": "https://servers.azael.dev",
   "repository": {
     "type": "git",
     "url": "https://github.com/Azael-Dev/cfx-servers.git"
