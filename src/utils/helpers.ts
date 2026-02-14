@@ -78,9 +78,6 @@ export function normalizeServer(raw: CfxServer): Server {
   const iconUrl = iconVersion > 0
     ? `https://servers-frontend.fivem.net/api/servers/icon/${raw.EndPoint}/${iconVersion}.png`
     : ''
-  const bannerUrl = iconVersion > 0
-    ? `https://servers-frontend.fivem.net/api/servers/banner/${raw.EndPoint}/${iconVersion}.png`
-    : ''
 
   return {
     id: raw.EndPoint,
@@ -106,7 +103,7 @@ export function normalizeServer(raw: CfxServer): Server {
     onesyncEnabled: vars['onesync_enabled'] === 'true' || vars['onesync_enabled'] === '1',
     server: data.server || '',
     iconUrl,
-    bannerUrl,
+    bannerUrl: vars['banner_connecting'] || vars['banner_detail'] || '',
     projectName: vars['sv_projectName'] || '',
     projectDescription: vars['sv_projectDesc'] || '',
     connectEndPoints: data.connectEndPoints || [],
