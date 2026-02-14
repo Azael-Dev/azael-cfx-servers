@@ -1,3 +1,4 @@
+import { API } from '@/constants'
 import type { CfxServer, Server, GameType } from '@/types'
 
 /**
@@ -70,14 +71,9 @@ function escapeHtml(str: string): string {
 export function normalizeServer(raw: CfxServer): Server {
   const data = raw.Data
   const vars = data.vars || {}
-
   const displayName = vars['sv_projectName'] || vars['sv_projectDesc'] || data.hostname || ''
-
-  // Generate icon and banner URLs from iconVersion
   const iconVersion = data.iconVersion || 0
-  const iconUrl = iconVersion > 0
-    ? `https://servers-frontend.fivem.net/api/servers/icon/${raw.EndPoint}/${iconVersion}.png`
-    : ''
+  const iconUrl = iconVersion != 0 ? API.SERVER_ICON(raw.EndPoint, iconVersion) : ''
 
   return {
     id: raw.EndPoint,

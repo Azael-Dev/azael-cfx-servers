@@ -1,5 +1,6 @@
 import { ref, watch, onUnmounted } from 'vue'
 import { fetchSingleServer } from '@/services/api'
+import { API } from '@/constants';
 
 /** In-memory icon cache shared across all ServerCard instances */
 const iconCache = new Map<string, { iconUrl: string; bannerUrl: string }>()
@@ -47,12 +48,8 @@ export function useServerIcon(endpoint: string, fallbackBanner: string) {
 
         const data = server.Data
         const vars = data.vars || {}
-        const iv = data.iconVersion || parseInt(vars['iconVersion'] || '0', 10) || null
-
-        const resolvedIcon = iv
-            ? `https://servers-frontend.fivem.net/api/servers/icon/${endpoint}/${iv}.png`
-            : ''
-
+        const iv = data.iconVersion || parseInt(vars['iconVersion'] || '0', 10) || 0
+        const resolvedIcon = iv != 0 ? API.SERVER_ICON(endpoint, iv) : ''
         const resolvedBanner = vars['banner_detail']
             || vars['banner_connecting']
             || fallbackBanner
