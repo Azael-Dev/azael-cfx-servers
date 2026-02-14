@@ -8,65 +8,77 @@ const props = defineProps<{
 
 const adContainer = ref<HTMLDivElement | null>(null)
 
-// Unique instance ID to prevent browser script caching
-const instanceId = Date.now() + Math.random().toString(36).substring(2, 9)
+// Global queue to serialize ad loading (prevent atOptions race condition)
+declare global {
+  interface Window {
+    __adQueue?: Promise<void>
+  }
+}
 
-// Function to load Adsterra script
+/**
+ * Load a single Adsterra ad: set atOptions, then load invoke.js and wait for it.
+ * Returns a promise that resolves when invoke.js has executed.
+ */
+const loadAd = (container: HTMLElement, key: string, width: number, height: number): Promise<void> => {
+  return new Promise((resolve) => {
+    // Set atOptions globally (Adsterra reads this)
+    ;(window as any).atOptions = {
+      key,
+      format: 'iframe',
+      height,
+      width,
+      params: {},
+    }
+
+    // Load invoke.js
+    const invokeScript = document.createElement('script')
+    invokeScript.type = 'text/javascript'
+    invokeScript.src = `https://www.highperformanceformat.com/${key}/invoke.js`
+
+    invokeScript.onload = () => {
+      // Small delay to let Adsterra finish rendering the iframe
+      setTimeout(resolve, 200)
+    }
+    invokeScript.onerror = () => resolve()
+
+    container.appendChild(invokeScript)
+  })
+}
+
 const loadAdsterraScript = async () => {
   await nextTick()
-  
   if (!adContainer.value) return
 
   // Clear previous content
   adContainer.value.innerHTML = ''
 
-  // Leaderboard ads (728x90) for header-banner and inline-server-list
-  if (props.adSlot.size === 'leaderboard' && 
-      (props.adSlot.id === 'header-banner' || props.adSlot.id === 'inline-server-list')) {
-    
-    // Set atOptions globally before loading the script
-    const configScript = document.createElement('script')
-    configScript.type = 'text/javascript'
-    configScript.textContent = `
-      atOptions = {
-        'key' : 'b8125a056372ff94d6b97e54f84d4f62',
-        'format' : 'iframe',
-        'height' : 90,
-        'width' : 728,
-        'params' : {}
-      };
-    `
-    adContainer.value.appendChild(configScript)
+  let key = ''
+  let width = 0
+  let height = 0
 
-    // Load the invoke script with unique query param to prevent caching
-    const invokeScript = document.createElement('script')
-    invokeScript.type = 'text/javascript'
-    invokeScript.src = `https://www.highperformanceformat.com/b8125a056372ff94d6b97e54f84d4f62/invoke.js?t=${instanceId}`
-    adContainer.value.appendChild(invokeScript)
+  // Leaderboard ads (728x90) for header-banner and inline-server-list
+  if (
+    props.adSlot.size === 'leaderboard' &&
+    (props.adSlot.id === 'header-banner' || props.adSlot.id === 'inline-server-list')
+  ) {
+    key = 'b8125a056372ff94d6b97e54f84d4f62'
+    width = 728
+    height = 90
   }
   // Rectangle ads (300x250) for sidebar
   else if (props.adSlot.size === 'rectangle' && props.adSlot.id === 'sidebar-rect') {
-    
-    // Set atOptions globally before loading the script
-    const configScript = document.createElement('script')
-    configScript.type = 'text/javascript'
-    configScript.textContent = `
-      atOptions = {
-        'key' : '9a262d58d722a366f3ae4b3b4ae408d4',
-        'format' : 'iframe',
-        'height' : 250,
-        'width' : 300,
-        'params' : {}
-      };
-    `
-    adContainer.value.appendChild(configScript)
-
-    // Load the invoke script with unique query param to prevent caching
-    const invokeScript = document.createElement('script')
-    invokeScript.type = 'text/javascript'
-    invokeScript.src = `https://www.highperformanceformat.com/9a262d58d722a366f3ae4b3b4ae408d4/invoke.js?t=${instanceId}`
-    adContainer.value.appendChild(invokeScript)
+    key = '9a262d58d722a366f3ae4b3b4ae408d4'
+    width = 300
+    height = 250
   }
+
+  if (!key) return
+
+  const container = adContainer.value
+
+  // Chain onto the global queue so ads load one at a time
+  const prev = window.__adQueue ?? Promise.resolve()
+  window.__adQueue = prev.then(() => loadAd(container, key, width, height))
 }
 
 onMounted(() => {
