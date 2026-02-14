@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed, ref, onMounted } from 'vue'
+import { computed, ref } from 'vue'
 import type { Server } from '@/types'
-import { renderHostname, formatNumber, getPlayerFillPercent, getFlagUrl, getConnectUrl } from '@/utils/helpers'
+import { renderHostname, formatNumber, getPlayerFillPercent, getFlagUrl, getConnectUrl, getServerColor, getServerInitial } from '@/utils/helpers'
 import { useI18n } from '@/i18n'
+import { useServerIcon } from '@/composables/useServerIcon'
 
 const { t } = useI18n()
 
@@ -37,29 +38,43 @@ const subtitle = computed(() =>
 
 const flagSrc = computed(() => getFlagUrl(props.server.locale))
 
+/** Deterministic color & initial for icon fallback */
+const serverColor = computed(() => getServerColor(props.server.endpoint))
+const serverInitial = computed(() => getServerInitial(props.server.projectName || props.server.hostname))
+
+/** Lazy-load icon & banner from single-server API */
+const { cardRef, iconUrl, bannerUrl, iconLoading } = useServerIcon(
+  props.server.endpoint,
+  props.server.bannerUrl,
+)
+
 /** Icon error handling */
 const iconError = ref(false)
 const handleIconError = () => { iconError.value = true }
 
 /** Banner preload — only show after confirmed load */
 const bannerLoaded = ref(false)
-onMounted(() => {
-  if (props.server.bannerUrl) {
-    const img = new Image()
-    img.onload = () => { bannerLoaded.value = true }
-    img.src = props.server.bannerUrl
-  }
-})
+
+// Watch bannerUrl and preload when it changes
+import { watch } from 'vue'
+watch(bannerUrl, (url) => {
+  if (!url) return
+  bannerLoaded.value = false
+  const img = new Image()
+  img.onload = () => { bannerLoaded.value = true }
+  img.onerror = () => { bannerLoaded.value = false }
+  img.src = url
+}, { immediate: true })
 </script>
 
 <template>
-  <div class="group relative overflow-hidden rounded-xl border border-surface-800 bg-surface-900/60 p-4 transition-all duration-200 hover:border-surface-700 hover:bg-surface-900 hover:shadow-xl hover:shadow-black/20">
+  <div ref="cardRef" class="group relative overflow-hidden rounded-xl border border-surface-800 bg-surface-900/60 p-4 transition-all duration-200 hover:border-surface-700 hover:bg-surface-900 hover:shadow-xl hover:shadow-black/20">
     <!-- Banner Background -->
     <div
       v-if="bannerLoaded"
       class="absolute inset-0 opacity-10 group-hover:opacity-[0.15] transition-opacity duration-300"
       :style="{
-        backgroundImage: `url(${server.bannerUrl})`,
+        backgroundImage: `url(${bannerUrl})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
       }"
@@ -68,19 +83,22 @@ onMounted(() => {
     <div class="relative z-10 flex items-start gap-4">
       <!-- Server Icon -->
       <div class="flex-shrink-0">
-        <div class="h-12 w-12 rounded-lg bg-surface-800 flex items-center justify-center overflow-hidden">
+        <div class="h-12 w-12 rounded-lg flex items-center justify-center overflow-hidden"
+             :style="{ backgroundColor: (!iconUrl || iconError) && !iconLoading ? serverColor : undefined }"
+             :class="{ 'bg-surface-800': (iconUrl && !iconError) || iconLoading }"
+        >
           <img
-            v-if="server.iconUrl && !iconError"
-            :src="server.iconUrl"
+            v-if="iconUrl && !iconError"
+            :src="iconUrl"
             :alt="server.hostnameClean"
             class="h-full w-full object-cover"
             loading="lazy"
             @error="handleIconError"
           />
-          <svg v-else class="h-6 w-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                  d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2" />
-          </svg>
+          <!-- Loading shimmer -->
+          <div v-else-if="iconLoading" class="h-full w-full animate-pulse bg-surface-700"></div>
+          <!-- Colored initial fallback -->
+          <span v-else class="text-lg font-bold text-white/90 select-none">{{ serverInitial }}</span>
         </div>
       </div>
 

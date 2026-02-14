@@ -172,3 +172,29 @@ export function truncate(text: string, maxLength: number): string {
   if (text.length <= maxLength) return text
   return text.slice(0, maxLength) + '...'
 }
+
+/**
+ * Generate a deterministic HSL color from a string (like servers.fivem.net).
+ * Same endpoint always produces the same color.
+ */
+export function getServerColor(str: string): string {
+  let hash = 0
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash)
+    hash |= 0 // Convert to 32bit int
+  }
+  const hue = ((hash % 360) + 360) % 360
+  return `hsl(${hue}, 55%, 45%)`
+}
+
+/**
+ * Get the first meaningful character for the server icon fallback.
+ * Strips color codes and returns uppercase initial.
+ */
+export function getServerInitial(name: string): string {
+  const clean = cleanHostname(name).trim()
+  if (!clean) return '?'
+  // Get first alphanumeric character
+  const match = clean.match(/[a-zA-Z0-9]/)
+  return match ? match[0].toUpperCase() : clean[0]!.toUpperCase()
+}
