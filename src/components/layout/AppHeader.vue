@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
 import type { GameType, PlayerCounts } from '@/types'
 import type { Locale } from '@/i18n/types'
 import { formatNumber } from '@/utils/helpers'
@@ -20,10 +20,31 @@ const currentCount = computed(() =>
   props.gameType === 'fivem' ? props.playerCounts.fivem : props.playerCounts.redm
 )
 
-const handleLocaleChange = (event: Event) => {
-  const target = event.target as HTMLSelectElement
-  setLocale(target.value as Locale)
+/** Custom language dropdown */
+const langOpen = ref(false)
+const langDropdownRef = ref<HTMLElement | null>(null)
+
+const currentLang = computed(() =>
+  availableLocales.find(l => l.code === currentLocale.value) || availableLocales[0]!
+)
+
+function selectLang(locale: Locale) {
+  setLocale(locale)
+  langOpen.value = false
 }
+
+function toggleLangDropdown() {
+  langOpen.value = !langOpen.value
+}
+
+function handleClickOutside(event: MouseEvent) {
+  if (langDropdownRef.value && !langDropdownRef.value.contains(event.target as Node)) {
+    langOpen.value = false
+  }
+}
+
+onMounted(() => document.addEventListener('click', handleClickOutside))
+onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 </script>
 
 <template>
@@ -77,34 +98,61 @@ const handleLocaleChange = (event: Event) => {
 
         <!-- Right section -->
         <div class="flex items-center gap-3">
-          <!-- Language Switcher -->
-          <div class="relative">
-            <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+          <!-- Language Switcher (custom dropdown) -->
+          <div ref="langDropdownRef" class="relative">
+            <button
+              type="button"
+              @click="toggleLangDropdown"
+              class="flex items-center gap-2 rounded-lg border border-surface-700 bg-surface-900 px-3 py-1.5 text-sm text-gray-300 transition-colors hover:border-surface-600 focus:border-primary-500 focus:outline-none cursor-pointer"
+            >
               <img
-                :src="`https://flagcdn.com/w40/${availableLocales.find(l => l.code === currentLocale)?.countryCode}.png`"
-                :alt="currentLocale"
+                :src="`https://flagcdn.com/w40/${currentLang.countryCode}.png`"
+                :alt="currentLang.label"
                 class="h-3 w-5 rounded-sm object-cover"
                 loading="lazy"
               />
-            </div>
-            <select
-              :value="currentLocale"
-              @change="handleLocaleChange"
-              class="appearance-none rounded-lg border border-surface-700 bg-surface-900 pl-10 pr-8 py-1.5 text-sm text-gray-300 transition-colors focus:border-primary-500 focus:outline-none cursor-pointer"
-            >
-              <option
-                v-for="loc in availableLocales"
-                :key="loc.code"
-                :value="loc.code"
+              <span>{{ currentLang.label }}</span>
+              <svg
+                class="h-3.5 w-3.5 text-gray-500 transition-transform"
+                :class="{ 'rotate-180': langOpen }"
+                fill="none" stroke="currentColor" viewBox="0 0 24 24"
               >
-                {{ loc.label }}
-              </option>
-            </select>
-            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
-              <svg class="h-3.5 w-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
               </svg>
-            </div>
+            </button>
+
+            <!-- Dropdown list -->
+            <Transition
+              enter-active-class="transition duration-100 ease-out"
+              enter-from-class="scale-95 opacity-0"
+              enter-to-class="scale-100 opacity-100"
+              leave-active-class="transition duration-75 ease-in"
+              leave-from-class="scale-100 opacity-100"
+              leave-to-class="scale-95 opacity-0"
+            >
+              <ul
+                v-if="langOpen"
+                class="absolute right-0 z-50 mt-1 w-44 overflow-auto rounded-lg border border-surface-700 bg-surface-900 py-1 shadow-xl shadow-black/30"
+              >
+                <li
+                  v-for="loc in availableLocales"
+                  :key="loc.code"
+                  @click="selectLang(loc.code)"
+                  :class="[
+                    'flex cursor-pointer items-center gap-2.5 px-3 py-2 text-sm transition-colors hover:bg-surface-800',
+                    loc.code === currentLocale ? 'bg-primary-600/15 text-primary-400' : 'text-gray-300',
+                  ]"
+                >
+                  <img
+                    :src="`https://flagcdn.com/w40/${loc.countryCode}.png`"
+                    :alt="loc.label"
+                    class="h-3 w-5 rounded-sm object-cover"
+                    loading="lazy"
+                  />
+                  <span>{{ loc.label }}</span>
+                </li>
+              </ul>
+            </Transition>
           </div>
 
           <a

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import type { Server } from '@/types'
 import { renderHostname, formatNumber, getPlayerFillPercent, getFlagUrl, getConnectUrl } from '@/utils/helpers'
 import { useI18n } from '@/i18n'
@@ -36,13 +36,27 @@ const subtitle = computed(() =>
 )
 
 const flagSrc = computed(() => getFlagUrl(props.server.locale))
+
+/** Icon error handling */
+const iconError = ref(false)
+const handleIconError = () => { iconError.value = true }
+
+/** Banner preload — only show after confirmed load */
+const bannerLoaded = ref(false)
+onMounted(() => {
+  if (props.server.bannerUrl) {
+    const img = new Image()
+    img.onload = () => { bannerLoaded.value = true }
+    img.src = props.server.bannerUrl
+  }
+})
 </script>
 
 <template>
   <div class="group relative overflow-hidden rounded-xl border border-surface-800 bg-surface-900/60 p-4 transition-all duration-200 hover:border-surface-700 hover:bg-surface-900 hover:shadow-xl hover:shadow-black/20">
     <!-- Banner Background -->
     <div
-      v-if="server.bannerUrl"
+      v-if="bannerLoaded"
       class="absolute inset-0 opacity-10 group-hover:opacity-[0.15] transition-opacity duration-300"
       :style="{
         backgroundImage: `url(${server.bannerUrl})`,
@@ -56,11 +70,12 @@ const flagSrc = computed(() => getFlagUrl(props.server.locale))
       <div class="flex-shrink-0">
         <div class="h-12 w-12 rounded-lg bg-surface-800 flex items-center justify-center overflow-hidden">
           <img
-            v-if="server.iconUrl"
+            v-if="server.iconUrl && !iconError"
             :src="server.iconUrl"
             :alt="server.hostnameClean"
             class="h-full w-full object-cover"
             loading="lazy"
+            @error="handleIconError"
           />
           <svg v-else class="h-6 w-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"

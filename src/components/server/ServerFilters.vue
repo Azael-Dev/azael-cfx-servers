@@ -38,10 +38,32 @@ function toggleLocaleDropdown() {
   localeOpen.value = !localeOpen.value
 }
 
+/** Sort dropdown open state */
+const sortOpen = ref(false)
+const sortDropdownRef = ref<HTMLElement | null>(null)
+
+/** Currently selected sort option */
+const selectedSort = computed(() => {
+  const key = `${props.filters.sortBy}:${props.filters.sortOrder}`
+  return SORT_OPTIONS.find(opt => `${opt.field}:${opt.order}` === key) || SORT_OPTIONS[0]!
+})
+
+function selectSort(field: SortField, order: SortOrder) {
+  emit('update:sort', field, order)
+  sortOpen.value = false
+}
+
+function toggleSortDropdown() {
+  sortOpen.value = !sortOpen.value
+}
+
 /** Close dropdown when clicking outside */
 function handleClickOutside(event: MouseEvent) {
   if (localeDropdownRef.value && !localeDropdownRef.value.contains(event.target as Node)) {
     localeOpen.value = false
+  }
+  if (sortDropdownRef.value && !sortDropdownRef.value.contains(event.target as Node)) {
+    sortOpen.value = false
   }
 }
 
@@ -59,12 +81,6 @@ const emit = defineEmits<{
   'update:sort': [field: SortField, order: SortOrder]
   'refresh': []
 }>()
-
-function handleSortChange(event: Event) {
-  const value = (event.target as HTMLSelectElement).value
-  const [field, order] = value.split(':') as [SortField, SortOrder]
-  emit('update:sort', field, order)
-}
 
 function handleHideEmptyChange(event: Event) {
   emit('update:hideEmpty', (event.target as HTMLInputElement).checked)
@@ -136,26 +152,54 @@ function handleHideFullChange(event: Event) {
       </Transition>
     </div>
 
-    <!-- Sort -->
-    <div class="relative">
-      <select
-        :value="`${props.filters.sortBy}:${props.filters.sortOrder}`"
-        @change="handleSortChange"
-        class="appearance-none rounded-lg border border-surface-700 bg-surface-900 px-4 py-2 pr-10 text-sm text-white transition-colors focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 cursor-pointer"
+    <!-- Sort (custom dropdown) -->
+    <div ref="sortDropdownRef" class="relative">
+      <button
+        type="button"
+        @click="toggleSortDropdown"
+        class="flex items-center gap-2 rounded-lg border border-surface-700 bg-surface-900 px-4 py-2 text-sm text-white transition-colors hover:border-surface-600 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
       >
-        <option
-          v-for="opt in SORT_OPTIONS"
-          :key="`${opt.field}:${opt.order}`"
-          :value="`${opt.field}:${opt.order}`"
-        >
-          {{ getSortLabel(opt.labelKey) }}
-        </option>
-      </select>
-      <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-        <svg class="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+        </svg>
+        <span>{{ getSortLabel(selectedSort.labelKey) }}</span>
+        <svg class="h-4 w-4 text-gray-500 transition-transform" :class="{ 'rotate-180': sortOpen }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
         </svg>
-      </div>
+      </button>
+
+      <!-- Dropdown list -->
+      <Transition
+        enter-active-class="transition duration-100 ease-out"
+        enter-from-class="scale-95 opacity-0"
+        enter-to-class="scale-100 opacity-100"
+        leave-active-class="transition duration-75 ease-in"
+        leave-from-class="scale-100 opacity-100"
+        leave-to-class="scale-95 opacity-0"
+      >
+        <ul
+          v-if="sortOpen"
+          class="absolute left-0 z-50 mt-1 w-56 overflow-auto rounded-lg border border-surface-700 bg-surface-900 py-1 shadow-xl shadow-black/30"
+        >
+          <li
+            v-for="opt in SORT_OPTIONS"
+            :key="`${opt.field}:${opt.order}`"
+            @click="selectSort(opt.field, opt.order)"
+            :class="[
+              'flex cursor-pointer items-center gap-2.5 px-3 py-2 text-sm transition-colors hover:bg-surface-800',
+              opt.field === props.filters.sortBy && opt.order === props.filters.sortOrder
+                ? 'bg-primary-600/15 text-primary-400'
+                : 'text-gray-300',
+            ]"
+          >
+            <svg class="h-4 w-4 flex-shrink-0" :class="opt.order === 'desc' ? 'text-orange-400' : 'text-blue-400'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path v-if="opt.order === 'desc'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4" />
+              <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+            </svg>
+            <span>{{ getSortLabel(opt.labelKey) }}</span>
+          </li>
+        </ul>
+      </Transition>
     </div>
 
     <!-- Toggle Filters -->

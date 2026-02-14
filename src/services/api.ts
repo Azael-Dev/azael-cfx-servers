@@ -119,6 +119,9 @@ function parseServerData(data: Uint8Array): CfxServerData {
   let mapname = ''
   let serverVersion = ''
   let upvotePower = 0
+  let burstPower = 0
+  let selfReportedClients = 0
+  let iconVersion = 0
 
   let pos = 0
   while (pos < data.length) {
@@ -135,7 +138,10 @@ function parseServerData(data: Uint8Array): CfxServerData {
       pos = np
       if (fieldNum === 1) maxClients = val
       else if (fieldNum === 2) clients = val
+      else if (fieldNum === 13) selfReportedClients = val
+      else if (fieldNum === 14) iconVersion = val
       else if (fieldNum === 16) upvotePower = val
+      else if (fieldNum === 17) burstPower = val
     } else if (wireType === 2) {
       // length-delimited
       const [bytes, np] = readLengthDelimited(data, pos)
@@ -168,20 +174,20 @@ function parseServerData(data: Uint8Array): CfxServerData {
     resources: [],
     server: serverVersion,
     vars,
-    selfReportedClients: clients,
+    selfReportedClients: selfReportedClients || clients,
     players: [],
     ownerID: '',
     private: false,
     fallback: false,
     connectEndPoints: [],
     upvotePower,
-    burstPower: 0,
+    burstPower,
     support_status: vars['support_status'] || '',
     ownerName: vars['ownerName'] || '',
     ownerProfile: vars['ownerProfile'] || '',
     ownerAvatar: vars['ownerAvatar'] || '',
     lastSeen: '',
-    iconVersion: parseInt(vars['iconVersion'] || '0', 10) || 0,
+    iconVersion: iconVersion || parseInt(vars['iconVersion'] || '0', 10) || 0,
   }
 }
 

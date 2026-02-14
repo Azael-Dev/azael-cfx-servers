@@ -2,7 +2,7 @@ import { ref, computed, watch, onUnmounted } from 'vue'
 import type { Server, FilterState, GameType, CfxServer, PlayerCounts } from '@/types'
 import { fetchAllServers, fetchPlayerCounts, clearCache } from '@/services/api'
 import { normalizeServer } from '@/utils/helpers'
-import { DEFAULT_PER_PAGE, REFRESH_INTERVAL } from '@/constants'
+import { DEFAULT_PER_PAGE, REFRESH_INTERVAL, LOCALE_OPTIONS } from '@/constants'
 
 const servers = ref<Server[]>([])
 const loading = ref(false)
@@ -12,9 +12,38 @@ const lastUpdated = ref<Date | null>(null)
 const playerCounts = ref<PlayerCounts>({ fivem: 0, redm: 0 })
 let refreshTimer: ReturnType<typeof setInterval> | null = null
 
+/**
+ * Detect client locale from browser and match to available LOCALE_OPTIONS.
+ * Returns matched locale code (e.g. 'th-TH') or '' (All) if no match.
+ */
+function detectClientLocale(): string {
+  try {
+    const langs = navigator.languages ?? [navigator.language]
+    for (const lang of langs) {
+      // Try exact match first (e.g., en-US → en-US)
+      const exact = LOCALE_OPTIONS.find(
+        opt => opt.code && opt.code.toLowerCase() === lang.toLowerCase()
+      )
+      if (exact) return exact.code
+
+      // Try language-only match (e.g., th → th-TH, de → de-DE)
+      const langCode = lang.split('-')[0]?.toLowerCase()
+      if (langCode) {
+        const partial = LOCALE_OPTIONS.find(
+          opt => opt.code && opt.code.split('-')[0]?.toLowerCase() === langCode
+        )
+        if (partial) return partial.code
+      }
+    }
+  } catch {
+    // navigator.languages may be unavailable
+  }
+  return '' // default: show all
+}
+
 const filters = ref<FilterState>({
   search: '',
-  locale: '',
+  locale: detectClientLocale(),
   gameType: 'fivem' as GameType,
   hideEmpty: false,
   hideFull: false,
