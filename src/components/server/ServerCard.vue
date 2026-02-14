@@ -41,12 +41,16 @@ const flagSrc = computed(() => getFlagUrl(props.server.locale))
 const serverGradient = computed(() => getServerGradient(props.server.endpoint))
 
 /** Lazy-load icon & banner from single-server API */
-const { cardRef, iconUrl, bannerUrl, upvotePower, burstPower, iconLoading } = useServerIcon(
+const _serverIcon = useServerIcon(
   props.server.endpoint,
   props.server.bannerUrl,
   props.server.upvotePower,
   props.server.burstPower,
 )
+const iconUrl = _serverIcon.iconUrl
+const bannerUrl = _serverIcon.bannerUrl
+const upvotePower = _serverIcon.upvotePower
+const iconLoading = _serverIcon.iconLoading
 
 /** Icon error handling */
 const iconError = ref(false)
@@ -68,7 +72,7 @@ watch(bannerUrl, (url) => {
 </script>
 
 <template>
-  <div ref="cardRef" class="group relative overflow-hidden rounded-xl border border-surface-800 bg-surface-900/60 px-4 py-3 transition-all duration-200 hover:border-surface-700 hover:bg-surface-900 hover:shadow-xl hover:shadow-black/20">
+  <div :ref="(el) => { _serverIcon.cardRef.value = el as HTMLElement | null }" class="group relative overflow-hidden rounded-xl border border-surface-800 bg-surface-900/60 px-4 py-3 transition-all duration-200 hover:border-surface-700 hover:bg-surface-900 hover:shadow-xl hover:shadow-black/20">
     <!-- Banner Background -->
     <div
       v-if="bannerLoaded"

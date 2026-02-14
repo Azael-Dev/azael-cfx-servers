@@ -25,7 +25,7 @@ const copyrightOwner = computed(() => {
     const name = parts[parts.length - 2]
     const tld  = parts[parts.length - 1]
 
-    const titleName = name
+    const titleName = (name ?? '')
         .split(/[-_]/)
         .map(s => s.charAt(0).toUpperCase() + s.slice(1))
         .join(' ')

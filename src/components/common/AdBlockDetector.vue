@@ -37,7 +37,7 @@ async function detectAdBlock(): Promise<boolean> {
 
     // Method 2: Try fetching a known ad script URL (blocked by filter lists)
     try {
-        const res = await fetch(
+        await fetch(
             'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js',
             {
                 method: 'HEAD',

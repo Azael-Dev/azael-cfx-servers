@@ -13,7 +13,7 @@ interface SeoMeta {
  * Updates document title, meta description, og tags, and html lang attribute.
  */
 export function useSeo() {
-    const { t, currentLocale } = useI18n()
+    const { currentLocale } = useI18n()
 
     const seoData: Record<string, { title: string; description: string }> = {
         en: {
@@ -50,10 +50,10 @@ export function useSeo() {
 
     function updateSeo(overrides?: SeoMeta) {
         const locale = currentLocale.value
-        const data = seoData[locale] ?? seoData.en
+        const data = seoData[locale] ?? seoData['en']
 
-        const title = overrides?.title ?? data.title
-        const description = overrides?.description ?? data.description
+        const title = overrides?.title ?? data!.title
+        const description = overrides?.description ?? data!.description
 
         // Update document title
         document.title = title
