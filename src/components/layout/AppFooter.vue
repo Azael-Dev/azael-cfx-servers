@@ -73,9 +73,15 @@ const copyrightOwner = computed(() => {
 
         <!-- Ad Slot: Footer -->
         <div>
-          <div class="rounded-lg border border-dashed border-surface-700 bg-surface-900/50 p-4 text-center">
+          <!-- <div class="rounded-lg border border-dashed border-surface-700 bg-surface-900/50 p-4 text-center">
             <p class="text-xs text-gray-600">{{ t.adSpace }}</p>
             <slot name="footer-ad"></slot>
+          </div> -->
+          <div class="rounded-lg border border-dashed border-surface-700 bg-surface-900/50 text-center">
+            <a href="https://beta.publishers.adsterra.com/referral/cYffQLq5Qy" target="_blank" rel="noopener noreferrer nofollow sponsored">
+              <img alt="banner" src="https://landings-cdn.adsterratech.com/referralBanners/gif/720x90_adsterra_reff.gif" class="rounded-lg" />
+              <slot name="footer-ad"></slot>
+            </a>
           </div>
         </div>
       </div>
