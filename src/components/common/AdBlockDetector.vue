@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useI18n } from '@/i18n'
+import { adBlockDetected as globalAdBlockDetected } from '@/composables/useAdBlock'
 
 const { t } = useI18n()
 
-const adBlockDetected = ref(false)
 const dismissed = ref(false)
 
 /**
@@ -62,17 +62,17 @@ function dismiss() {
 }
 
 onMounted(async () => {
-    // Check if already dismissed this session
+    // Always run detection first
+    globalAdBlockDetected.value = await detectAdBlock()
+
+    // Check if already dismissed this session (only hide modal, keep ads hidden)
     try {
         if (sessionStorage.getItem('adblock-dismissed') === '1') {
             dismissed.value = true
-            return
         }
     } catch {
         // ignore
     }
-
-    adBlockDetected.value = await detectAdBlock()
 })
 </script>
 
@@ -82,7 +82,7 @@ onMounted(async () => {
         <Transition enter-active-class="transition-opacity duration-300 ease-out" enter-from-class="opacity-0"
             enter-to-class="opacity-100" leave-active-class="transition-opacity duration-200 ease-in"
             leave-from-class="opacity-100" leave-to-class="opacity-0">
-            <div v-if="adBlockDetected && !dismissed"
+            <div v-if="globalAdBlockDetected && !dismissed"
                 class="fixed inset-0 z-[9999] flex items-center justify-center p-4">
                 <!-- Backdrop -->
                 <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" />

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, nextTick } from 'vue'
 import type { AdSlot } from '@/types'
+import { adBlockDetected } from '@/composables/useAdBlock'
 
 const props = defineProps<{
   adSlot: AdSlot
@@ -107,7 +108,7 @@ onMounted(() => {
 
 <template>
   <div
-    v-if="adSlot.enabled"
+    v-if="adSlot.enabled && !adBlockDetected"
     :class="[
       'rounded-lg border border-dashed border-surface-700 bg-surface-900/50 overflow-hidden',
       {
