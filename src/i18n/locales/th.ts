@@ -37,7 +37,7 @@ const th: TranslationSchema = {
   // Server detail
   serverDetail: 'รายละเอียด',
   detailPlayers: 'ผู้เล่น',
-  detailResources: 'รีซอร์ส',
+  detailResources: 'ทรัพยากร',
   detailTags: 'แท็ก',
   detailOwner: 'เจ้าของ',
   detailGameBuild: 'Game Build',
@@ -47,7 +47,7 @@ const th: TranslationSchema = {
   detailPrivate: 'ส่วนตัว',
   detailEndpoint: 'Endpoint',
   detailNoPlayers: 'ไม่มีผู้เล่นออนไลน์',
-  detailNoResources: 'ไม่มีรีซอร์ส',
+  detailNoResources: 'ไม่มีทรัพยากร',
   detailNoTags: 'ไม่มีแท็ก',
   detailLoading: 'กำลังโหลดรายละเอียด...',
   detailShowAll: 'แสดงทั้งหมด ({count})',
