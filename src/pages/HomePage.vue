@@ -38,6 +38,8 @@ const {
 // Ad slot configurations
 const headerAd: AdSlot = { id: 'header-banner', position: 'header', size: 'leaderboard', enabled: true }
 const sidebarAd: AdSlot = { id: 'sidebar-rect', position: 'sidebar', size: 'rectangle', enabled: true }
+const sidebarAd2: AdSlot = { id: 'sidebar-rect-2', position: 'sidebar', size: 'rectangle', enabled: true }
+const sidebarAd3: AdSlot = { id: 'sidebar-rect-3', position: 'sidebar', size: 'rectangle', enabled: true }
 
 function handleSortUpdate(field: SortField, order: SortOrder) {
   filters.value.sortBy = field
@@ -183,6 +185,10 @@ watch(stats, (newStats) => {
 
             <!-- Cfx.re Feed -->
             <CfxFeed />
+
+            <!-- Sidebar Ad -->
+            <AdBanner :ad-slot="sidebarAd2" />
+            <AdBanner :ad-slot="sidebarAd3" />
           </aside>
         </div>
       </div>

@@ -86,7 +86,7 @@ const loadAdsterraScript = async () => {
     height = 90
   }
   // Rectangle ads (300x250) for sidebar
-  else if (props.adSlot.size === 'rectangle' && props.adSlot.id === 'sidebar-rect') {
+  else if (props.adSlot.size === 'rectangle' && props.adSlot.id.startsWith('sidebar-rect')) {
     key = '9a262d58d722a366f3ae4b3b4ae408d4'
     width = 300
     height = 250
