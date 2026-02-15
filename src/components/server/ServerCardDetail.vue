@@ -246,17 +246,6 @@ onMounted(async () => {
                 </div>
             </div>
 
-            <!-- Mobile Connect Button -->
-            <div class="flex md:hidden pt-1">
-                <a :href="getConnectUrl(gameType, serverId)"
-                    class="flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white shadow-lg shadow-primary-600/20 transition-all duration-200 hover:bg-primary-500 active:scale-95"
-                    @click.stop>
-                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                        <path d="M5 3v18l15-9L5 3z" />
-                    </svg>
-                    {{ t.connect }}
-                </a>
-            </div>
         </div>
     </div>
 </template>

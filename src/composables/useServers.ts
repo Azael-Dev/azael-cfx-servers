@@ -140,9 +140,11 @@ const stats = computed(() => {
 })
 
 export function useServers() {
-  /** Load all servers from API */
-  async function loadServers() {
-    loading.value = true
+  /** Load all servers from API (initial load shows skeleton, refresh does not) */
+  async function loadServers(isBackgroundRefresh = false) {
+    if (!isBackgroundRefresh) {
+      loading.value = true
+    }
     error.value = null
     loadProgress.value = 0
 
@@ -161,10 +163,15 @@ export function useServers() {
       playerCounts.value = await fetchPlayerCounts()
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load servers'
-      error.value = message
+      // Only surface errors on initial load, not background refresh
+      if (!isBackgroundRefresh) {
+        error.value = message
+      }
       console.error('Failed to load servers:', err)
     } finally {
-      loading.value = false
+      if (!isBackgroundRefresh) {
+        loading.value = false
+      }
     }
   }
 
@@ -177,7 +184,7 @@ export function useServers() {
   /** Start auto-refresh */
   function startAutoRefresh() {
     stopAutoRefresh()
-    refreshTimer = setInterval(loadServers, REFRESH_INTERVAL)
+    refreshTimer = setInterval(() => loadServers(true), REFRESH_INTERVAL)
   }
 
   /** Stop auto-refresh */

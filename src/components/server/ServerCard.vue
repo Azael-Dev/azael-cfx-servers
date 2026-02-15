@@ -82,6 +82,10 @@ const isDesktop = typeof window !== 'undefined'
 let hoverTimer: ReturnType<typeof setTimeout> | null = null
 const HOVER_DELAY = 400 // ms before expand on hover
 
+/** Detect Windows platform for Connect button (fivem:// protocol) */
+const isWindows = typeof navigator !== 'undefined'
+  && /Windows/i.test(navigator.userAgent)
+
 function handleMouseEnter() {
   if (!isDesktop?.matches) return
   hoverTimer = setTimeout(() => { expanded.value = true }, HOVER_DELAY)
@@ -229,8 +233,8 @@ onBeforeUnmount(() => {
         </div>
       </div>
 
-      <!-- Connect button (hidden on small screens) -->
-      <div class="hidden md:flex flex-shrink-0">
+      <!-- Connect button (Windows desktop only) -->
+      <div v-if="isWindows" class="flex flex-shrink-0">
         <a
           :href="getConnectUrl(server.gameType, server.id)"
           class="flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-1.5 text-xs font-medium text-white shadow-lg shadow-primary-600/20 transition-all duration-200 hover:bg-primary-500 hover:shadow-primary-500/30 active:scale-95"
