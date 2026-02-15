@@ -4,6 +4,7 @@ import type { Server } from '@/types'
 import { renderHostname, formatNumber, getPlayerFillPercent, getFlagUrl, getConnectUrl, getServerGradient } from '@/utils/helpers'
 import { useI18n } from '@/i18n'
 import { useServerIcon } from '@/composables/useServerIcon'
+import { expandedServerIds } from '@/composables/useServers'
 import ServerCardDetail from './ServerCardDetail.vue'
 
 const { t } = useI18n()
@@ -74,6 +75,16 @@ watch(bannerUrl, (url) => {
 // ── Expand / Collapse logic ────────────────────────────────────────────
 const expanded = ref(false)
 
+// Sync expanded state with global set so auto-refresh can preserve data
+watch(expanded, (val) => {
+  if (val) expandedServerIds.add(props.server.id)
+  else expandedServerIds.delete(props.server.id)
+})
+
+onBeforeUnmount(() => {
+  expandedServerIds.delete(props.server.id)
+})
+
 /** Desktop: require pointer device with hover capability */
 const isDesktop = typeof window !== 'undefined'
   ? window.matchMedia('(hover: hover) and (pointer: fine)')
@@ -86,14 +97,31 @@ const HOVER_DELAY = 400 // ms before expand on hover
 const isWindows = typeof navigator !== 'undefined'
   && /Windows/i.test(navigator.userAgent)
 
+/** Track if mouse is over the Connect button to prevent card expansion */
+const isOverConnect = ref(false)
+
 function handleMouseEnter() {
   if (!isDesktop?.matches) return
+  if (isOverConnect.value) return
   hoverTimer = setTimeout(() => { expanded.value = true }, HOVER_DELAY)
 }
 
 function handleMouseLeave() {
   if (hoverTimer) { clearTimeout(hoverTimer); hoverTimer = null }
   if (isDesktop?.matches) { expanded.value = false }
+}
+
+function handleConnectEnter() {
+  isOverConnect.value = true
+  if (hoverTimer) { clearTimeout(hoverTimer); hoverTimer = null }
+}
+
+function handleConnectLeave() {
+  isOverConnect.value = false
+  // Restart hover timer since mouse is still inside the card
+  if (isDesktop?.matches && !expanded.value) {
+    hoverTimer = setTimeout(() => { expanded.value = true }, HOVER_DELAY)
+  }
 }
 
 function handleCardClick(e: MouseEvent) {
@@ -234,7 +262,10 @@ onBeforeUnmount(() => {
       </div>
 
       <!-- Connect button (Windows desktop only) -->
-      <div v-if="isWindows" class="flex flex-shrink-0">
+      <div v-if="isWindows" class="hidden md:flex flex-shrink-0"
+        @mouseenter="handleConnectEnter"
+        @mouseleave="handleConnectLeave"
+      >
         <a
           :href="getConnectUrl(server.gameType, server.id)"
           class="flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-1.5 text-xs font-medium text-white shadow-lg shadow-primary-600/20 transition-all duration-200 hover:bg-primary-500 hover:shadow-primary-500/30 active:scale-95"

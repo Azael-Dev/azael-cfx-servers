@@ -61,9 +61,14 @@ const inlineAdSlot: AdSlot = {
             <div class="h-1 w-full rounded-full bg-surface-800 animate-pulse"></div>
           </div>
 
-          <!-- Connect button skeleton (hidden on small screens) -->
+          <!-- Connect button skeleton (Windows desktop only) -->
           <div class="hidden md:flex flex-shrink-0">
             <div class="h-[30px] w-[72px] rounded-lg bg-surface-800 animate-pulse"></div>
+          </div>
+
+          <!-- Expand indicator skeleton (mobile only) -->
+          <div class="flex-shrink-0 ml-0.5 md:hidden">
+            <div class="h-4 w-4 rounded bg-surface-800/60 animate-pulse"></div>
           </div>
         </div>
       </div>

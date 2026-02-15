@@ -1,4 +1,4 @@
-import { ref, computed, watch, onUnmounted } from 'vue'
+import { ref, reactive, computed, watch, onUnmounted } from 'vue'
 import type { Server, FilterState, GameType, CfxServer, PlayerCounts } from '@/types'
 import { fetchAllServers, fetchPlayerCounts, clearCache } from '@/services/api'
 import { normalizeServer } from '@/utils/helpers'
@@ -11,6 +11,13 @@ const loadProgress = ref(0)
 const lastUpdated = ref<Date | null>(null)
 const playerCounts = ref<PlayerCounts>({ fivem: 0, redm: 0 })
 let refreshTimer: ReturnType<typeof setInterval> | null = null
+
+/**
+ * Set of server IDs currently expanded (detail panel open).
+ * Exported at module level so ServerCard can add/remove without calling useServers().
+ * Background refresh preserves old data for these servers to keep the UI stable.
+ */
+export const expandedServerIds = reactive(new Set<string>())
 
 /**
  * Detect client locale from browser and match to available LOCALE_OPTIONS.
@@ -153,9 +160,19 @@ export function useServers() {
         loadProgress.value = count
       })
 
-      servers.value = rawServers
+      let newServers = rawServers
         .map(normalizeServer)
         .filter(s => s.hostnameClean.length > 0)
+
+      // Preserve old data for servers with detail panel open
+      if (isBackgroundRefresh && expandedServerIds.size > 0) {
+        const oldMap = new Map(servers.value.map(s => [s.id, s]))
+        newServers = newServers.map(s =>
+          expandedServerIds.has(s.id) && oldMap.has(s.id) ? oldMap.get(s.id)! : s
+        )
+      }
+
+      servers.value = newServers
 
       lastUpdated.value = new Date()
 

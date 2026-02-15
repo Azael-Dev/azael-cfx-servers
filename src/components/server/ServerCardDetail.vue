@@ -137,22 +137,22 @@ onMounted(async () => {
                     <!-- Feature Labels -->
                     <div class="col-span-full mt-1 flex flex-wrap items-center gap-x-4 gap-y-1.5">
                         <div class="flex items-center gap-1.5">
-                            <span class="text-gray-500 text-xs">{{ t.detailOneSync }}:</span>
-                            <span class="inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] border"
-                                :class="onesync ? 'bg-emerald-900/30 text-emerald-400 border-emerald-800/50' : 'bg-surface-800/60 text-gray-500 border-surface-700/30'">{{
-                                    onesync ? t.detailEnabled : t.detailDisabled }}</span>
-                        </div>
-                        <div class="flex items-center gap-1.5">
                             <span class="text-gray-500 text-xs">{{ t.detailPrivate }}:</span>
                             <span class="inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] border"
-                                :class="isPrivate ? 'bg-red-900/30 text-red-400 border-red-800/50' : 'bg-surface-800/60 text-gray-500 border-surface-700/30'">{{
+                                :class="isPrivate ? 'bg-red-900/30 text-red-400 border-red-800/50' : 'bg-emerald-900/30 text-emerald-400 border-emerald-800/50'">{{
                                     isPrivate ? t.detailYes : t.detailNo }}</span>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-gray-500 text-xs">{{ t.detailOneSync }}:</span>
+                            <span class="inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] border"
+                                :class="onesync ? 'bg-emerald-900/30 text-emerald-400 border-emerald-800/50' : 'bg-red-900/30 text-red-400 border-red-800/50'">{{
+                                    onesync ? t.detailEnabled : t.detailDisabled }}</span>
                         </div>
                         <div v-if="pureLevel > 0" class="flex items-center gap-1.5">
                             <span class="text-gray-500 text-xs">{{ t.detailPureLevel }}:</span>
                             <span class="inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] border" :class="{
-                                'bg-violet-900/30 text-violet-400 border-violet-800/50': pureLevel === 1,
-                                'bg-amber-900/30 text-amber-400 border-amber-800/50': pureLevel >= 2,
+                                'bg-amber-900/30 text-amber-400 border-amber-800/50': pureLevel === 1,
+                                'bg-emerald-900/30 text-emerald-400 border-emerald-800/50': pureLevel >= 2,
                             }">
                                 Level {{ pureLevel }}
                             </span>
