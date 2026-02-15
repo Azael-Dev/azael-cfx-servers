@@ -34,6 +34,32 @@ export interface TranslationSchema {
   // Server card
   connect: string
 
+  // Server detail
+  serverDetail: string
+  detailPlayers: string
+  detailResources: string
+  detailTags: string
+  detailOwner: string
+  detailGameBuild: string
+  detailOneSync: string
+  detailServerVersion: string
+  detailScriptHook: string
+  detailPrivate: string
+  detailEndpoint: string
+  detailNoPlayers: string
+  detailNoResources: string
+  detailNoTags: string
+  detailLoading: string
+  detailShowAll: string
+  detailShowLess: string
+  detailEnabled: string
+  detailDisabled: string
+  detailYes: string
+  detailNo: string
+  detailPlayerName: string
+  detailPlayerPing: string
+  detailPureLevel: string
+
   // Server list
   noServersFound: string
   noServersSuggestion: string

@@ -34,6 +34,32 @@ const en: TranslationSchema = {
   // Server card
   connect: 'Connect',
 
+  // Server detail
+  serverDetail: 'Details',
+  detailPlayers: 'Players',
+  detailResources: 'Resources',
+  detailTags: 'Tags',
+  detailOwner: 'Owner',
+  detailGameBuild: 'Game Build',
+  detailOneSync: 'OneSync',
+  detailServerVersion: 'FXServer',
+  detailScriptHook: 'Script Hook',
+  detailPrivate: 'Private',
+  detailEndpoint: 'Endpoint',
+  detailNoPlayers: 'No players online',
+  detailNoResources: 'No resources',
+  detailNoTags: 'No tags',
+  detailLoading: 'Loading details...',
+  detailShowAll: 'Show all ({count})',
+  detailShowLess: 'Show less',
+  detailEnabled: 'Enabled',
+  detailDisabled: 'Disabled',
+  detailYes: 'Yes',
+  detailNo: 'No',
+  detailPlayerName: 'Name',
+  detailPlayerPing: 'Ping',
+  detailPureLevel: 'Pure Mode',
+
   // Server list
   noServersFound: 'No servers found',
   noServersSuggestion: 'Try changing your filters or search query',

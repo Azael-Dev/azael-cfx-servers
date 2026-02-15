@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, onBeforeUnmount } from 'vue'
 import type { Server } from '@/types'
 import { renderHostname, formatNumber, getPlayerFillPercent, getFlagUrl, getConnectUrl, getServerGradient } from '@/utils/helpers'
 import { useI18n } from '@/i18n'
 import { useServerIcon } from '@/composables/useServerIcon'
+import ServerCardDetail from './ServerCardDetail.vue'
 
 const { t } = useI18n()
 
@@ -69,20 +70,64 @@ watch(bannerUrl, (url) => {
   img.onerror = () => { bannerLoaded.value = false }
   img.src = url
 }, { immediate: true })
+
+// ── Expand / Collapse logic ────────────────────────────────────────────
+const expanded = ref(false)
+
+/** Desktop: require pointer device with hover capability */
+const isDesktop = typeof window !== 'undefined'
+  ? window.matchMedia('(hover: hover) and (pointer: fine)')
+  : null
+
+let hoverTimer: ReturnType<typeof setTimeout> | null = null
+const HOVER_DELAY = 400 // ms before expand on hover
+
+function handleMouseEnter() {
+  if (!isDesktop?.matches) return
+  hoverTimer = setTimeout(() => { expanded.value = true }, HOVER_DELAY)
+}
+
+function handleMouseLeave() {
+  if (hoverTimer) { clearTimeout(hoverTimer); hoverTimer = null }
+  if (isDesktop?.matches) { expanded.value = false }
+}
+
+function handleCardClick(e: MouseEvent) {
+  // Don't toggle when clicking interactive elements (links, buttons)
+  const target = e.target as HTMLElement
+  if (target.closest('a, button')) return
+
+  // On touch devices, toggle on click
+  if (!isDesktop?.matches) {
+    expanded.value = !expanded.value
+  }
+}
+
+onBeforeUnmount(() => {
+  if (hoverTimer) { clearTimeout(hoverTimer); hoverTimer = null }
+})
 </script>
 
 <template>
-  <div :ref="(el) => { _serverIcon.cardRef.value = el as HTMLElement | null }" class="group relative overflow-hidden rounded-xl border border-surface-800 bg-surface-900/60 px-4 py-3 transition-all duration-200 hover:border-surface-700 hover:bg-surface-900 hover:shadow-xl hover:shadow-black/20">
-    <!-- Banner Background -->
-    <div
-      v-if="bannerLoaded"
-      class="absolute inset-0 opacity-10 group-hover:opacity-[0.15] transition-opacity duration-300"
-      :style="{
-        backgroundImage: `url(${bannerUrl})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-      }"
-    ></div>
+  <div
+    :ref="(el) => { _serverIcon.cardRef.value = el as HTMLElement | null }"
+    class="group relative overflow-hidden rounded-xl border border-surface-800 bg-surface-900/60 px-4 py-3 transition-all duration-200 hover:border-surface-700 hover:bg-surface-900 hover:shadow-xl hover:shadow-black/20 cursor-pointer select-none"
+    @mouseenter="handleMouseEnter"
+    @mouseleave="handleMouseLeave"
+    @click="handleCardClick"
+  >
+    <!-- Banner Background (fixed to header row, does not expand) -->
+    <div class="absolute inset-x-0 top-0 h-[calc(2.5rem+1.5rem)] pointer-events-none">
+      <div
+        v-if="bannerLoaded"
+        class="absolute inset-0 opacity-10 group-hover:opacity-[0.15] transition-opacity duration-300"
+        :style="{
+          backgroundImage: `url(${bannerUrl})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }"
+      ></div>
+    </div>
 
     <div class="relative z-10 flex items-center gap-3">
       <!-- Server Icon -->
@@ -189,6 +234,7 @@ watch(bannerUrl, (url) => {
         <a
           :href="getConnectUrl(server.gameType, server.id)"
           class="flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-1.5 text-xs font-medium text-white shadow-lg shadow-primary-600/20 transition-all duration-200 hover:bg-primary-500 hover:shadow-primary-500/30 active:scale-95"
+          @click.stop
         >
           <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
             <path d="M5 3v18l15-9L5 3z" />
@@ -196,6 +242,35 @@ watch(bannerUrl, (url) => {
           <span class="hidden sm:inline">{{ t.connect }}</span>
         </a>
       </div>
+
+      <!-- Expand indicator (mobile only) -->
+      <div class="flex-shrink-0 ml-0.5 md:hidden">
+        <svg
+          class="h-4 w-4 text-gray-600 transition-transform duration-200"
+          :class="{ 'rotate-180': expanded }"
+          fill="none" stroke="currentColor" viewBox="0 0 24 24"
+        >
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+        </svg>
+      </div>
     </div>
+
+    <!-- Expanded Detail Panel -->
+    <Transition
+      enter-active-class="transition-all duration-300 ease-out"
+      enter-from-class="max-h-0 opacity-0"
+      enter-to-class="max-h-[800px] opacity-100"
+      leave-active-class="transition-all duration-200 ease-in"
+      leave-from-class="max-h-[800px] opacity-100"
+      leave-to-class="max-h-0 opacity-0"
+    >
+      <div v-if="expanded" class="overflow-hidden">
+        <ServerCardDetail
+          :endpoint="server.endpoint"
+          :game-type="server.gameType"
+          :server-id="server.id"
+        />
+      </div>
+    </Transition>
   </div>
 </template>

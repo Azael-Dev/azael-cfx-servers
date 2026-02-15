@@ -34,6 +34,32 @@ const th: TranslationSchema = {
   // Server card
   connect: 'เชื่อมต่อ',
 
+  // Server detail
+  serverDetail: 'รายละเอียด',
+  detailPlayers: 'ผู้เล่น',
+  detailResources: 'รีซอร์ส',
+  detailTags: 'แท็ก',
+  detailOwner: 'เจ้าของ',
+  detailGameBuild: 'Game Build',
+  detailOneSync: 'OneSync',
+  detailServerVersion: 'FXServer',
+  detailScriptHook: 'Script Hook',
+  detailPrivate: 'ส่วนตัว',
+  detailEndpoint: 'Endpoint',
+  detailNoPlayers: 'ไม่มีผู้เล่นออนไลน์',
+  detailNoResources: 'ไม่มีรีซอร์ส',
+  detailNoTags: 'ไม่มีแท็ก',
+  detailLoading: 'กำลังโหลดรายละเอียด...',
+  detailShowAll: 'แสดงทั้งหมด ({count})',
+  detailShowLess: 'แสดงน้อยลง',
+  detailEnabled: 'เปิดใช้งาน',
+  detailDisabled: 'ปิดใช้งาน',
+  detailYes: 'ใช่',
+  detailNo: 'ไม่',
+  detailPlayerName: 'ชื่อ',
+  detailPlayerPing: 'ปิง',
+  detailPureLevel: 'Pure Mode',
+
   // Server list
   noServersFound: 'ไม่พบเซิร์ฟเวอร์',
   noServersSuggestion: 'ลองเปลี่ยนตัวกรองหรือคำค้นหา',
