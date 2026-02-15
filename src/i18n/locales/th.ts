@@ -63,6 +63,11 @@ const th: TranslationSchema = {
   redmOfficial: 'เว็บไซต์ทางการ RedM',
   cfxForum: 'ฟอรั่ม Cfx.re',
 
+  // Cfx.re Feed
+  cfxFeed: 'ฟีดข่าว',
+  cfxFeedEmpty: 'ไม่มีโพสต์',
+  cfxFeedError: 'ไม่สามารถโหลดฟีดได้',
+
   // Ad blocker
   adBlockTitle: 'ตรวจพบตัวบล็อกโฆษณา',
   adBlockMessage: 'เว็บไซต์นี้ให้บริการฟรีและอาศัยรายได้จากโฆษณา กรุณาปิดตัวบล็อกโฆษณาเพื่อสนับสนุนเรา',

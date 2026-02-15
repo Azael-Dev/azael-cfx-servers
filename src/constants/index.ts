@@ -51,6 +51,8 @@ export const API = {
   /** Server icon */
   SERVER_ICON: (endpoint: string, iconVersion: number) =>
     `https://servers-frontend.fivem.net/api/servers/icon/${endpoint}/${iconVersion}.png`,
+  /** Cfx.re tweets feed */
+  TWEETS: 'https://runtime.fivem.net/tweets.json',
 } as const
 
 /** Cache duration in milliseconds (5 minutes) */

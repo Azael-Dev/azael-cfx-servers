@@ -198,3 +198,40 @@ export function getServerGradient(str: string): string {
   const angle = ((hash >> 16) % 360 + 360) % 360
   return `linear-gradient(${angle}deg, hsl(${hue1}, 60%, 40%), hsl(${hue2}, 50%, 50%))`
 }
+
+/**
+ * Format ISO date string as relative time (e.g. "5 minutes ago" or "5 นาทีที่แล้ว")
+ * Uses Intl.RelativeTimeFormat for proper localization.
+ * @param dateStr - ISO date string or parseable date string
+ * @param locale - BCP 47 locale tag (e.g. 'en', 'th')
+ */
+export function formatRelativeTime(dateStr: string, locale = 'en'): string {
+  const date = new Date(dateStr)
+  const now = Date.now()
+  const diffMs = now - date.getTime()
+  const diffSec = Math.floor(diffMs / 1000)
+  const diffMin = Math.floor(diffSec / 60)
+  const diffHr = Math.floor(diffMin / 60)
+  const diffDay = Math.floor(diffHr / 24)
+  const diffMo = Math.floor(diffDay / 30)
+  const diffYr = Math.floor(diffDay / 365)
+
+  try {
+    const rtf = new Intl.RelativeTimeFormat(locale, { numeric: 'auto', style: 'long' })
+
+    if (diffYr > 0) return rtf.format(-diffYr, 'year')
+    if (diffMo > 0) return rtf.format(-diffMo, 'month')
+    if (diffDay > 0) return rtf.format(-diffDay, 'day')
+    if (diffHr > 0) return rtf.format(-diffHr, 'hour')
+    if (diffMin > 0) return rtf.format(-diffMin, 'minute')
+    return rtf.format(-diffSec, 'second')
+  } catch {
+    // Fallback if Intl.RelativeTimeFormat fails
+    if (diffYr > 0) return `${diffYr} year${diffYr > 1 ? 's' : ''} ago`
+    if (diffMo > 0) return `${diffMo} month${diffMo > 1 ? 's' : ''} ago`
+    if (diffDay > 0) return `${diffDay} day${diffDay > 1 ? 's' : ''} ago`
+    if (diffHr > 0) return `${diffHr} hour${diffHr > 1 ? 's' : ''} ago`
+    if (diffMin > 0) return `${diffMin} minute${diffMin > 1 ? 's' : ''} ago`
+    return `${diffSec} second${diffSec > 1 ? 's' : ''} ago`
+  }
+}

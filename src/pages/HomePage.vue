@@ -17,6 +17,7 @@ import ServerList from '@/components/server/ServerList.vue'
 import StatsBar from '@/components/common/StatsBar.vue'
 import Pagination from '@/components/common/Pagination.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
+import CfxFeed from '@/components/sidebar/CfxFeed.vue'
 
 const {
   loading,
@@ -179,6 +180,9 @@ watch(stats, (newStats) => {
 
             <!-- Sidebar Ad -->
             <AdBanner :ad-slot="sidebarAd" />
+
+            <!-- Cfx.re Feed -->
+            <CfxFeed />
           </aside>
         </div>
       </div>

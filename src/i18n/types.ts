@@ -63,6 +63,11 @@ export interface TranslationSchema {
   redmOfficial: string
   cfxForum: string
 
+  // Cfx.re Feed
+  cfxFeed: string
+  cfxFeedEmpty: string
+  cfxFeedError: string
+
   // Ad blocker
   adBlockTitle: string
   adBlockMessage: string

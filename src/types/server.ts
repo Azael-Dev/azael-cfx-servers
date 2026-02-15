@@ -82,6 +82,25 @@ export interface Server {
   resources: string[]
 }
 
+/** Cfx.re tweet from runtime API */
+export interface CfxTweet {
+  id_str: string
+  full_text: string
+  created_at: string
+  favorite_count: number
+  retweet_count: number
+  user: {
+    id_str: string
+    name: string
+    screen_name: string
+    profile_image_url_https: string
+  }
+  extended_entities?: {
+    urls?: { url: string; expanded_url: string; display_url: string }[]
+    media?: { url: string; media_url_https: string; type: string }[]
+  }
+}
+
 /** Sort options */
 export type SortField = 'players' | 'name' | 'upvotes' | 'maxPlayers'
 export type SortOrder = 'asc' | 'desc'
