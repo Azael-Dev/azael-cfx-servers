@@ -3,7 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import type { CfxPlayer } from '@/types'
 import { fetchSingleServer } from '@/services/api'
 import { useI18n } from '@/i18n'
-import { formatNumber, getConnectUrl } from '@/utils/helpers'
+import { formatNumber } from '@/utils/helpers'
 
 const { t } = useI18n()
 
