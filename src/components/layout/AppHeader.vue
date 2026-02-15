@@ -112,17 +112,17 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
             <button
               type="button"
               @click="toggleLangDropdown"
-              class="flex items-center gap-2 rounded-lg border border-surface-700 bg-surface-900 px-3 py-1.5 text-sm text-gray-300 transition-colors hover:border-surface-600 focus:border-primary-500 focus:outline-none cursor-pointer"
+              class="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-gray-400 hover:text-white hover:bg-surface-800 transition-colors focus:outline-none cursor-pointer"
+              :title="currentLang.label"
             >
-              <img
-                :src="`https://flagcdn.com/w40/${currentLang.countryCode}.png`"
-                :alt="currentLang.label"
-                class="h-3 w-5 rounded-sm object-cover"
-                loading="lazy"
-              />
-              <span>{{ currentLang.label }}</span>
+              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3.6 9h16.8M3.6 15h16.8" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 3a15.3 15.3 0 0 1 4 9 15.3 15.3 0 0 1-4 9 15.3 15.3 0 0 1-4-9 15.3 15.3 0 0 1 4-9Z" />
+              </svg>
+              <span class="text-sm font-medium uppercase">{{ currentLang.code }}</span>
               <svg
-                class="h-3.5 w-3.5 text-gray-500 transition-transform"
+                class="h-4 w-4 transition-transform"
                 :class="{ 'rotate-180': langOpen }"
                 fill="none" stroke="currentColor" viewBox="0 0 24 24"
               >
