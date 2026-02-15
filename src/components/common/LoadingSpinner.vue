@@ -1,33 +1,8 @@
-<script setup lang="ts">
-import { useI18n } from '@/i18n'
-
-const { t, tt } = useI18n()
-
-defineProps<{
-  progress?: number
-}>()
-</script>
-
 <template>
   <div class="space-y-3">
-    <!-- Progress info -->
-    <div v-if="progress && progress > 0" class="flex items-center justify-between px-1 mb-2">
-      <p class="text-xs text-gray-500">{{ t.loadingServers }}</p>
-      <div class="flex items-center gap-3">
-        <p class="text-xs text-gray-600">{{ tt('loadedServers', { count: progress.toLocaleString() }) }}</p>
-        <div class="h-1 w-32 overflow-hidden rounded-full bg-surface-800">
-          <div
-            class="h-full rounded-full bg-primary-500 transition-all duration-300"
-            :style="{ width: `${Math.min(100, (progress / 8000) * 100)}%` }"
-          ></div>
-        </div>
-      </div>
-    </div>
-    <p v-else class="text-xs text-gray-500 px-1 mb-2">{{ t.loadingServers }}</p>
-
     <!-- Skeleton cards -->
     <div
-      v-for="i in 8"
+      v-for="i in 10"
       :key="i"
       class="rounded-xl border border-surface-800 bg-surface-900/60 px-4 py-3"
     >
