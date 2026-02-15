@@ -32,8 +32,12 @@ export function renderHostname(hostname: string): string {
     '9': '#9E9E9E', // Grey
   }
 
+  // Batch consecutive characters with the same color into a single <span>
+  // to preserve complex script shaping (Thai, Arabic, etc.)
   let result = ''
   let currentColor = '#FFFFFF'
+  let buffer = ''
+  let bufferColor = currentColor
   let i = 0
 
   while (i < hostname.length) {
@@ -45,9 +49,19 @@ export function renderHostname(hostname: string): string {
     } else if (char === '~' && i + 2 < hostname.length && hostname[i + 2] === '~') {
       i += 3 // Skip ~x~ codes
     } else {
-      result += `<span style="color:${currentColor}">${escapeHtml(char)}</span>`
+      if (currentColor !== bufferColor && buffer) {
+        result += `<span style="color:${bufferColor}">${escapeHtml(buffer)}</span>`
+        buffer = ''
+      }
+      bufferColor = currentColor
+      buffer += char
       i++
     }
+  }
+
+  // Flush remaining buffer
+  if (buffer) {
+    result += `<span style="color:${bufferColor}">${escapeHtml(buffer)}</span>`
   }
 
   return result

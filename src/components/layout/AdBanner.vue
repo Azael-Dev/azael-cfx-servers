@@ -113,6 +113,7 @@ onMounted(() => {
       'rounded-lg border border-dashed border-surface-700 bg-surface-900/50 overflow-hidden',
       {
         'h-[90px]': adSlot.size === 'banner' && adSlot.position !== 'footer',
+        'h-[90px] w-full mb-6': adSlot.size === 'leaderboard' && adSlot.id === 'header-banner',
         'h-[90px] w-full': adSlot.size === 'leaderboard',
         'h-[250px] w-[300px]': adSlot.size === 'rectangle',
         'h-[600px] w-[160px]': adSlot.size === 'skyscraper',
