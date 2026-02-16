@@ -105,6 +105,7 @@ watch(stats, (newStats) => {
                 @update:locale="filters.locale = $event"
                 @update:hide-empty="filters.hideEmpty = $event"
                 @update:hide-full="filters.hideFull = $event"
+                @update:hide-private="filters.hidePrivate = $event"
                 @update:sort="handleSortUpdate"
                 @refresh="refresh"
               />

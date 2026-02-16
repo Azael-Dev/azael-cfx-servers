@@ -20,6 +20,7 @@ const th: TranslationSchema = {
   // Filters
   hideEmpty: 'ซ่อนว่าง',
   hideFull: 'ซ่อนเต็ม',
+  hidePrivate: 'ซ่อนส่วนตัว',
   refresh: 'รีเฟรช',
   allLocales: 'ทั้งหมด (All)',
 

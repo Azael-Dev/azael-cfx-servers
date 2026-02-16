@@ -112,6 +112,7 @@ export interface FilterState {
   gameType: GameType
   hideEmpty: boolean
   hideFull: boolean
+  hidePrivate: boolean
   sortBy: SortField
   sortOrder: SortOrder
   currentPage: number

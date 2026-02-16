@@ -20,6 +20,7 @@ export interface TranslationSchema {
   // Filters
   hideEmpty: string
   hideFull: string
+  hidePrivate: string
   refresh: string
   allLocales: string
 

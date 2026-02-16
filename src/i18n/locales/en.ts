@@ -20,6 +20,7 @@ const en: TranslationSchema = {
   // Filters
   hideEmpty: 'Hide empty',
   hideFull: 'Hide full',
+  hidePrivate: 'Hide private',
   refresh: 'Refresh',
   allLocales: 'All',
 

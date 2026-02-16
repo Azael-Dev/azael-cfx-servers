@@ -7,6 +7,7 @@ import { useServerIcon } from '@/composables/useServerIcon'
 import { expandedServerIds } from '@/composables/useServers'
 import { getCountryFlagUrl } from '@/composables/useCountryFlag'
 import ServerCardDetail from './ServerCardDetail.vue'
+import AppTooltip from '@/components/common/AppTooltip.vue'
 
 const { t } = useI18n()
 
@@ -142,17 +143,15 @@ function handleDetailLoaded(payload: { loadFailed: boolean; isPrivate: boolean }
 }
 
 function handleCardClick(e: MouseEvent) {
-  // Don't toggle when clicking interactive elements (links, buttons)
+  // Don't toggle when clicking interactive elements (links, buttons, tooltips)
   const target = e.target as HTMLElement
   if (target.closest('a, button')) return
 
   // Don't expand if loading failed
   if (serverLoadFailed.value) return
 
-  // On touch devices, toggle on click
-  if (!isDesktop?.matches) {
-    expanded.value = !expanded.value
-  }
+  // Toggle on click (both desktop and mobile)
+  expanded.value = !expanded.value
 }
 
 onBeforeUnmount(() => {
@@ -287,16 +286,20 @@ onBeforeUnmount(() => {
         @mouseleave="handleConnectLeave"
       >
         <!-- Disabled state: load failed or private server -->
-        <span
+        <AppTooltip
           v-if="connectDisabled"
-          class="flex items-center gap-1.5 rounded-lg bg-surface-700 px-3 py-1.5 text-xs font-medium text-gray-500 cursor-not-allowed select-none"
-          :title="serverLoadFailed ? t.connectUnavailable : t.connectPrivate"
+          :text="serverLoadFailed ? t.connectUnavailable : t.connectPrivate"
+          position="top"
         >
-          <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <path d="M5 3v18l15-9L5 3z" />
-          </svg>
-          <span class="hidden sm:inline">{{ t.connect }}</span>
-        </span>
+          <span
+            class="flex items-center gap-1.5 rounded-lg bg-surface-700 px-3 py-1.5 text-xs font-medium text-gray-500 cursor-not-allowed select-none"
+          >
+            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M5 3v18l15-9L5 3z" />
+            </svg>
+            <span class="hidden sm:inline">{{ t.connect }}</span>
+          </span>
+        </AppTooltip>
         <!-- Normal state -->
         <a
           v-else
@@ -312,7 +315,7 @@ onBeforeUnmount(() => {
       </div>
 
       <!-- Expand indicator (mobile only) -->
-      <div class="flex-shrink-0 ml-0.5 md:hidden">
+      <div class="md:hidden flex-shrink-0 ml-0.5">
         <svg
           class="h-4 w-4 text-gray-600 transition-transform duration-200"
           :class="{ 'rotate-180': expanded }"

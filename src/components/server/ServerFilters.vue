@@ -75,6 +75,7 @@ const emit = defineEmits<{
   'update:locale': [value: string]
   'update:hideEmpty': [value: boolean]
   'update:hideFull': [value: boolean]
+  'update:hidePrivate': [value: boolean]
   'update:sort': [field: SortField, order: SortOrder]
   'refresh': []
 }>()
@@ -85,6 +86,10 @@ function handleHideEmptyChange(event: Event) {
 
 function handleHideFullChange(event: Event) {
   emit('update:hideFull', (event.target as HTMLInputElement).checked)
+}
+
+function handleHidePrivateChange(event: Event) {
+  emit('update:hidePrivate', (event.target as HTMLInputElement).checked)
 }
 </script>
 
@@ -234,6 +239,16 @@ function handleHideFullChange(event: Event) {
         class="h-4 w-4 rounded border-surface-700 bg-surface-900 text-primary-500 focus:ring-primary-500/20 cursor-pointer"
       />
       <span class="text-sm text-gray-400">{{ t.hideFull }}</span>
+    </label>
+
+    <label class="flex items-center gap-2 cursor-pointer select-none">
+      <input
+        type="checkbox"
+        :checked="props.filters.hidePrivate"
+        @change="handleHidePrivateChange"
+        class="h-4 w-4 rounded border-surface-700 bg-surface-900 text-primary-500 focus:ring-primary-500/20 cursor-pointer"
+      />
+      <span class="text-sm text-gray-400">{{ t.hidePrivate }}</span>
     </label>
 
     <!-- Refresh -->

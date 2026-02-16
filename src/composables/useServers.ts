@@ -29,6 +29,7 @@ const filters = ref<FilterState>({
   gameType: 'fivem' as GameType,
   hideEmpty: false,
   hideFull: false,
+  hidePrivate: false,
   sortBy: 'players',
   sortOrder: 'desc',
   currentPage: 1,
@@ -166,6 +167,11 @@ const filteredServers = computed(() => {
   // Hide full servers
   if (filters.value.hideFull) {
     result = result.filter(s => s.players < s.maxPlayers)
+  }
+
+  // Hide private servers
+  if (filters.value.hidePrivate) {
+    result = result.filter(s => !s.private)
   }
 
   // Sort
@@ -308,7 +314,7 @@ export function useServers() {
 
   /** Reset current page when filters change */
   watch(
-    () => [filters.value.search, filters.value.locale, filters.value.gameType, filters.value.hideEmpty, filters.value.hideFull],
+    () => [filters.value.search, filters.value.locale, filters.value.gameType, filters.value.hideEmpty, filters.value.hideFull, filters.value.hidePrivate],
     () => {
       filters.value.currentPage = 1
     }
