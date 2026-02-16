@@ -2,7 +2,8 @@ import { ref, reactive, computed, watch, onUnmounted } from 'vue'
 import type { Server, FilterState, GameType, CfxServer, PlayerCounts } from '@/types'
 import { fetchAllServers, fetchPlayerCounts, clearCache } from '@/services/api'
 import { normalizeServer } from '@/utils/helpers'
-import { DEFAULT_PER_PAGE, REFRESH_INTERVAL, LOCALE_OPTIONS } from '@/constants'
+import { DEFAULT_PER_PAGE, REFRESH_INTERVAL } from '@/constants'
+import { useGeoLocation } from '@/composables/useGeoLocation'
 
 const servers = ref<Server[]>([])
 const loading = ref(false)
@@ -11,6 +12,7 @@ const loadProgress = ref(0)
 const lastUpdated = ref<Date | null>(null)
 const playerCounts = ref<PlayerCounts>({ fivem: 0, redm: 0 })
 let refreshTimer: ReturnType<typeof setInterval> | null = null
+let geoLocaleApplied = false
 
 /**
  * Set of server IDs currently expanded (detail panel open).
@@ -19,38 +21,9 @@ let refreshTimer: ReturnType<typeof setInterval> | null = null
  */
 export const expandedServerIds = reactive(new Set<string>())
 
-/**
- * Detect client locale from browser and match to available LOCALE_OPTIONS.
- * Returns matched locale code (e.g. 'th-TH') or '' (All) if no match.
- */
-function detectClientLocale(): string {
-  try {
-    const langs = navigator.languages ?? [navigator.language]
-    for (const lang of langs) {
-      // Try exact match first (e.g., en-US → en-US)
-      const exact = LOCALE_OPTIONS.find(
-        opt => opt.code && opt.code.toLowerCase() === lang.toLowerCase()
-      )
-      if (exact) return exact.code
-
-      // Try language-only match (e.g., th → th-TH, de → de-DE)
-      const langCode = lang.split('-')[0]?.toLowerCase()
-      if (langCode) {
-        const partial = LOCALE_OPTIONS.find(
-          opt => opt.code && opt.code.split('-')[0]?.toLowerCase() === langCode
-        )
-        if (partial) return partial.code
-      }
-    }
-  } catch {
-    // navigator.languages may be unavailable
-  }
-  return '' // default: show all
-}
-
 const filters = ref<FilterState>({
   search: '',
-  locale: detectClientLocale(),
+  locale: '',
   gameType: 'fivem' as GameType,
   hideEmpty: false,
   hideFull: false,
@@ -60,6 +33,94 @@ const filters = ref<FilterState>({
   perPage: DEFAULT_PER_PAGE,
 })
 
+/**
+ * Extract a valid ISO 3166-1 alpha-2 region code from a locale string.
+ * Returns uppercase 2-letter code or '' if invalid.
+ */
+function extractRegion(code: string): string {
+  const parts = code.split(/[-_]/)
+  const region = parts[1]?.toUpperCase()
+  // Must be exactly 2 uppercase letters (A-Z)
+  if (region && /^[A-Z]{2}$/.test(region)) return region
+  return ''
+}
+
+/**
+ * Get country display name for a locale code using Intl.DisplayNames.
+ * Uses the region part (e.g. 'en-US' → 'United States', 'th-TH' → 'Thailand').
+ * Returns '' if the region is invalid or not recognized.
+ */
+function getCountryDisplayName(code: string): string {
+  const region = extractRegion(code)
+  if (!region) return ''
+  try {
+    const uiLang = navigator.language || 'en'
+    const regionDisplay = new Intl.DisplayNames([uiLang], { type: 'region' })
+    const name = regionDisplay.of(region)
+    // Intl.DisplayNames returns the input code itself when unrecognized
+    if (!name || name === region) return ''
+    return name
+  } catch {
+    return ''
+  }
+}
+
+/** Locale option derived from server data */
+export interface DynamicLocaleOption {
+  code: string
+  label: string
+  count: number
+  flagUrl: string
+}
+
+/**
+ * Build dynamic locale options grouped by country from current servers filtered by game type.
+ * Locales without a valid region code are excluded (counted under "All" only).
+ * Sorted by server count descending. Only includes countries with count > 0.
+ */
+const localeMap = computed(() => {
+  // Group by region (country code) — multiple locale codes with the same
+  // region (e.g. en-US, es-US) are merged under one country entry.
+  const regionMap = new Map<string, { codes: Set<string>; count: number }>()
+  for (const s of servers.value) {
+    if (s.gameType !== filters.value.gameType) continue
+    const loc = s.locale
+    if (!loc) continue
+    const region = extractRegion(loc)
+    if (!region) continue // invalid region → skip (falls into All)
+    const entry = regionMap.get(region)
+    if (entry) {
+      entry.codes.add(loc)
+      entry.count++
+    } else {
+      regionMap.set(region, { codes: new Set([loc]), count: 1 })
+    }
+  }
+  return regionMap
+})
+
+const dynamicLocaleOptions = computed<DynamicLocaleOption[]>(() => {
+  const options: DynamicLocaleOption[] = []
+
+  for (const [region, { codes, count }] of localeMap.value) {
+    if (count === 0) continue
+    const label = getCountryDisplayName([...codes][0]!)
+    if (!label) continue // unrecognized country → skip
+    const cc = region.toLowerCase()
+    const flagUrl = `https://flagcdn.com/w40/${cc}.png`
+    options.push({
+      code: region, // use region code (e.g. 'US', 'TH') as the filter key
+      label,
+      count,
+      flagUrl,
+    })
+  }
+
+  // Sort by count descending
+  options.sort((a, b) => b.count - a.count)
+  return options
+})
+
 /** Filtered and sorted server list */
 const filteredServers = computed(() => {
   let result = [...servers.value]
@@ -67,9 +128,10 @@ const filteredServers = computed(() => {
   // Filter by game type
   result = result.filter(s => s.gameType === filters.value.gameType)
 
-  // Filter by locale
+  // Filter by locale (region-based: e.g. 'US' matches 'en-US', 'es-US', etc.)
   if (filters.value.locale) {
-    result = result.filter(s => s.locale === filters.value.locale)
+    const filterRegion = filters.value.locale.toUpperCase()
+    result = result.filter(s => extractRegion(s.locale) === filterRegion)
   }
 
   // Filter by search query
@@ -147,6 +209,8 @@ const stats = computed(() => {
 })
 
 export function useServers() {
+  const { detectCountryCode } = useGeoLocation()
+
   /** Load all servers from API (initial load shows skeleton, refresh does not) */
   async function loadServers(isBackgroundRefresh = false) {
     if (!isBackgroundRefresh) {
@@ -175,6 +239,24 @@ export function useServers() {
       servers.value = newServers
 
       lastUpdated.value = new Date()
+
+      // Apply geo-based locale once after first load
+      if (!geoLocaleApplied) {
+        geoLocaleApplied = true
+        try {
+          const cc = await detectCountryCode()
+          if (cc) {
+            // cc is already an ISO country code (e.g. 'TH', 'US')
+            const ccUpper = cc.toUpperCase()
+            const match = dynamicLocaleOptions.value.find(opt => opt.code === ccUpper)
+            if (match) {
+              filters.value.locale = match.code
+            }
+          }
+        } catch {
+          // geo detection failed, keep filter as-is
+        }
+      }
 
       // Also fetch player counts
       playerCounts.value = await fetchPlayerCounts()
@@ -238,6 +320,7 @@ export function useServers() {
     totalFiltered,
     totalServers,
     stats,
+    dynamicLocaleOptions,
     loadServers,
     refresh,
     startAutoRefresh,

@@ -2,9 +2,9 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import type { FilterState, SortField, SortOrder } from '@/types'
 import type { TranslationSchema } from '@/i18n/types'
-import { LOCALE_OPTIONS, SORT_OPTIONS } from '@/constants'
+import type { DynamicLocaleOption } from '@/composables/useServers'
+import { SORT_OPTIONS } from '@/constants'
 import { useI18n } from '@/i18n'
-import { getFlagUrl } from '@/utils/helpers'
 
 const { t } = useI18n()
 
@@ -13,21 +13,17 @@ function getSortLabel(labelKey: string): string {
   return t.value[labelKey as keyof TranslationSchema] || labelKey
 }
 
-/** Locale options with i18n "All" label */
-const localeOptions = computed(() =>
-  LOCALE_OPTIONS.map(opt =>
-    opt.code === '' ? { ...opt, label: t.value.allLocales } : opt
-  )
-)
-
 /** Locale dropdown open state */
 const localeOpen = ref(false)
 const localeDropdownRef = ref<HTMLElement | null>(null)
 
 /** Currently selected locale option */
-const selectedLocale = computed(() =>
-  localeOptions.value.find(opt => opt.code === props.filters.locale) || localeOptions.value[0]!
-)
+const selectedLocale = computed(() => {
+  if (!props.filters.locale) {
+    return { code: '', label: t.value.allLocales, count: 0, flagUrl: '' }
+  }
+  return props.localeOptions.find(opt => opt.code === props.filters.locale) || { code: props.filters.locale, label: props.filters.locale, count: 0, flagUrl: '' }
+})
 
 function selectLocale(code: string) {
   emit('update:locale', code)
@@ -72,6 +68,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
 
 const props = defineProps<{
   filters: FilterState
+  localeOptions: DynamicLocaleOption[]
 }>()
 
 const emit = defineEmits<{
@@ -101,8 +98,8 @@ function handleHideFullChange(event: Event) {
         class="flex items-center gap-2 rounded-lg border border-surface-700 bg-surface-900 px-4 py-2 text-sm text-white transition-colors hover:border-surface-600 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
       >
         <img
-          v-if="selectedLocale.code && getFlagUrl(selectedLocale.code)"
-          :src="getFlagUrl(selectedLocale.code)"
+          v-if="selectedLocale.flagUrl"
+          :src="selectedLocale.flagUrl"
           :alt="selectedLocale.code"
           class="h-3 w-5 rounded-sm object-cover"
         />
@@ -128,8 +125,23 @@ function handleHideFullChange(event: Event) {
           v-if="localeOpen"
           class="absolute left-0 z-50 mt-1 max-h-72 w-56 overflow-auto rounded-lg border border-surface-700 bg-surface-900 py-1 shadow-xl shadow-black/30"
         >
+          <!-- "All" option -->
           <li
-            v-for="opt in localeOptions"
+            @click="selectLocale('')"
+            :class="[
+              'flex cursor-pointer items-center gap-2.5 px-3 py-2 text-sm transition-colors hover:bg-surface-800',
+              props.filters.locale === '' ? 'bg-primary-600/15 text-primary-400' : 'text-gray-300',
+            ]"
+          >
+            <svg class="h-4 w-5 flex-shrink-0 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span class="flex-1">{{ t.allLocales }}</span>
+          </li>
+
+          <!-- Dynamic locale options -->
+          <li
+            v-for="opt in props.localeOptions"
             :key="opt.code"
             @click="selectLocale(opt.code)"
             :class="[
@@ -138,15 +150,16 @@ function handleHideFullChange(event: Event) {
             ]"
           >
             <img
-              v-if="opt.code && getFlagUrl(opt.code)"
-              :src="getFlagUrl(opt.code)"
+              v-if="opt.flagUrl"
+              :src="opt.flagUrl"
               :alt="opt.code"
-              class="h-3 w-5 rounded-sm object-cover"
+              class="h-3 w-5 flex-shrink-0 rounded-sm object-cover"
             />
-            <svg v-else class="h-4 w-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg v-else class="h-4 w-5 flex-shrink-0 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <span>{{ opt.label }}</span>
+            <span class="flex-1 truncate">{{ opt.label }}</span>
+            <span class="ml-auto text-xs text-gray-500">{{ opt.count.toLocaleString() }}</span>
           </li>
         </ul>
       </Transition>

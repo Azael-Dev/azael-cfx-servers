@@ -1,12 +1,6 @@
 /** Represents game type for the CFX platform */
 export type GameType = 'fivem' | 'redm'
 
-/** Locale/country filter options */
-export interface LocaleOption {
-  code: string
-  label: string
-}
-
 /** Server data returned from the CFX API */
 export interface CfxServer {
   EndPoint: string

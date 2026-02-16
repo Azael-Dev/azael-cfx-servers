@@ -30,6 +30,7 @@ const {
   totalPages,
   totalFiltered,
   stats,
+  dynamicLocaleOptions,
   loadServers,
   refresh,
   startAutoRefresh,
@@ -100,6 +101,7 @@ watch(stats, (newStats) => {
               />
               <ServerFilters
                 :filters="filters"
+                :locale-options="dynamicLocaleOptions"
                 @update:locale="filters.locale = $event"
                 @update:hide-empty="filters.hideEmpty = $event"
                 @update:hide-full="filters.hideFull = $event"
