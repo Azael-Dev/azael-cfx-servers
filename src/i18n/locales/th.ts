@@ -61,6 +61,8 @@ const th: TranslationSchema = {
   detailPlayerPing: 'ปิง',
   detailPureLevel: 'Pure Mode',
   detailLoadFailed: 'ไม่สามารถโหลดรายละเอียดเซิร์ฟเวอร์ได้',
+  detailLinks: 'ลิงก์',
+  detailWebsite: 'เว็บไซต์',
 
   // Server card (connect button states)
   connectUnavailable: 'ไม่สามารถโหลดข้อมูลเซิร์ฟเวอร์ได้',

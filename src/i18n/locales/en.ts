@@ -61,6 +61,8 @@ const en: TranslationSchema = {
   detailPlayerPing: 'Ping',
   detailPureLevel: 'Pure Mode',
   detailLoadFailed: 'Failed to load server details',
+  detailLinks: 'Links',
+  detailWebsite: 'Website',
 
   // Server card (connect button states)
   connectUnavailable: 'Server details unavailable',

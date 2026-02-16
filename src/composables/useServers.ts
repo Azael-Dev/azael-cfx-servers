@@ -5,6 +5,7 @@ import { normalizeServer } from '@/utils/helpers'
 import { DEFAULT_PER_PAGE, REFRESH_INTERVAL } from '@/constants'
 import { useGeoLocation } from '@/composables/useGeoLocation'
 import { getCountryFlagUrl } from '@/composables/useCountryFlag'
+import { privateServerIds } from '@/composables/useServerIcon'
 import { useI18n } from '@/i18n'
 
 const servers = ref<Server[]>([])
@@ -169,9 +170,9 @@ const filteredServers = computed(() => {
     result = result.filter(s => s.players < s.maxPlayers)
   }
 
-  // Hide private servers
+  // Hide private servers (private status comes from fetchSingleServer via useServerIcon)
   if (filters.value.hidePrivate) {
-    result = result.filter(s => !s.private)
+    result = result.filter(s => !privateServerIds.has(s.endpoint))
   }
 
   // Sort

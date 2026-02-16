@@ -1,9 +1,15 @@
-import { ref, watch, onUnmounted } from 'vue'
+import { ref, reactive, watch, onUnmounted } from 'vue'
 import { fetchSingleServer } from '@/services/api'
 import { API } from '@/constants';
 
 /** In-memory icon cache shared across all ServerCard instances */
 const iconCache = new Map<string, { iconUrl: string; bannerUrl: string; upvotePower: number; burstPower: number; loadFailed: boolean; isPrivate: boolean }>()
+
+/**
+ * Reactive set of server endpoints discovered as private via fetchSingleServer.
+ * Used by useServers to filter out private servers when hidePrivate is enabled.
+ */
+export const privateServerIds = reactive(new Set<string>())
 
 /**
  * Lazy-load server icon & banner via the single-server JSON API.
@@ -82,6 +88,13 @@ export function useServerIcon(endpoint: string, fallbackBanner: string, initialU
         isPrivate.value = resolvedIsPrivate
         loadFailed.value = false
         connectEnabled.value = !resolvedIsPrivate
+
+        // Track private servers globally for reactive filtering
+        if (resolvedIsPrivate) {
+          privateServerIds.add(endpoint)
+        } else {
+          privateServerIds.delete(endpoint)
+        }
 
         // Cache for reuse (e.g. when paginating back)
         iconCache.set(endpoint, {

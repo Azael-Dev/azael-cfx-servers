@@ -122,6 +122,7 @@ function parseServerData(data: Uint8Array): CfxServerData {
   let burstPower = 0
   let selfReportedClients = 0
   let iconVersion = 0
+  let isPrivate = false
 
   let pos = 0
   while (pos < data.length) {
@@ -140,6 +141,7 @@ function parseServerData(data: Uint8Array): CfxServerData {
       else if (fieldNum === 2) clients = val
       else if (fieldNum === 13) selfReportedClients = val
       else if (fieldNum === 14) iconVersion = val
+      else if (fieldNum === 15) isPrivate = val !== 0
       else if (fieldNum === 16) upvotePower = val
       else if (fieldNum === 17) burstPower = val
     } else if (wireType === 2) {
@@ -177,7 +179,7 @@ function parseServerData(data: Uint8Array): CfxServerData {
     selfReportedClients: selfReportedClients || clients,
     players: [],
     ownerID: '',
-    private: false,
+    private: isPrivate,
     fallback: false,
     connectEndPoints: [],
     upvotePower,

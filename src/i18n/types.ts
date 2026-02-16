@@ -61,6 +61,8 @@ export interface TranslationSchema {
   detailPlayerPing: string
   detailPureLevel: string
   detailLoadFailed: string
+  detailLinks: string
+  detailWebsite: string
 
   // Server card (connect button states)
   connectUnavailable: string
