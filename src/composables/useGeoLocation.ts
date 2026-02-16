@@ -9,7 +9,7 @@ interface GeoCache {
     timestamp: number
 }
 
-/** Reactive country code detected from ipwho.is (cached in localStorage) */
+/** Reactive country code detected from freeipapi.com (cached in localStorage) */
 const countryCode = ref<string>('')
 const geoLoading = ref(false)
 const geoReady = ref(false)
@@ -40,7 +40,7 @@ function setCache(code: string): void {
     }
 }
 
-/** Fetch country code from ipwho.is (cached in localStorage) */
+/** Fetch country code from freeipapi.com (cached in localStorage) */
 async function detectCountryCode(): Promise<string> {
     // Return cached value if available
     const cached = getCached()
@@ -55,12 +55,7 @@ async function detectCountryCode(): Promise<string> {
         const res = await fetch(API.GEOLOCATION)
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
         const data = await res.json()
-        if (!data.success) {
-            console.warn('ipwho.is error:', data.message)
-            geoReady.value = true
-            return ''
-        }
-        const code = (data.country_code as string) || ''
+        const code = data.countryCode ?? data.country_code ?? ''
         countryCode.value = code
         setCache(code)
         geoReady.value = true
