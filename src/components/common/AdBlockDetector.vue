@@ -12,30 +12,34 @@ const dismissed = ref(false)
  * Ad blockers typically hide/remove elements with ad-related class names.
  */
 async function detectAdBlock(): Promise<boolean> {
-    // Method 1: Bait element with ad-related class names
+    // Method 1: Bait element with ad-related class names & attributes
+    // Ad blockers typically hide/remove elements matching ad filter lists
     const bait = document.createElement('div')
     bait.className = 'ad ads adsbox ad-banner textads banner-ads'
+    bait.setAttribute('data-ad-slot', 'test')
     bait.style.cssText =
-        'position:absolute;top:-10px;left:-10px;width:1px;height:1px;overflow:hidden;'
+        'position:absolute;top:-1000px;left:-1000px;width:300px;height:250px;'
     bait.innerHTML = '&nbsp;'
     document.body.appendChild(bait)
 
-    // Wait a frame for ad blocker to act
+    // Wait for ad blocker to act (some need multiple frames)
     await new Promise((r) => requestAnimationFrame(r))
-    await new Promise((r) => setTimeout(r, 100))
+    await new Promise((r) => setTimeout(r, 150))
 
-    const baitBlocked =
+    const isRemoved = !bait.parentNode
+    const baitBlocked = isRemoved ||
         bait.offsetHeight === 0 ||
         bait.offsetWidth === 0 ||
         bait.clientHeight === 0 ||
         getComputedStyle(bait).display === 'none' ||
         getComputedStyle(bait).visibility === 'hidden'
 
-    bait.remove()
+    if (!isRemoved) bait.remove()
 
     if (baitBlocked) return true
 
-    // Method 2: Try fetching a known ad script URL (blocked by filter lists)
+    // Method 2: Try loading a script from a known ad domain
+    // Ad blockers block network requests to ad domains
     try {
         await fetch(
             'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js',
@@ -45,9 +49,11 @@ async function detectAdBlock(): Promise<boolean> {
                 cache: 'no-store',
             },
         )
-        // If we get here without error, ads are likely not blocked
+        // no-cors fetch: opaque response (status 0, type "opaque") means it succeeded
+        // If we reach here without throwing, no ad blocker is blocking network requests
         return false
     } catch {
+        // fetch threw → blocked by ad blocker
         return true
     }
 }

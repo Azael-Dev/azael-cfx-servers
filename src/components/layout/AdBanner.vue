@@ -19,9 +19,19 @@ declare global {
 /**
  * Load a single Adsterra ad: set atOptions, then load invoke.js and wait for it.
  * Returns a promise that resolves when invoke.js has executed.
+ * Includes a timeout and container connectivity check to prevent queue stalling.
  */
 const loadAd = (container: HTMLElement, key: string, width: number, height: number): Promise<void> => {
   return new Promise((resolve) => {
+    // If the container was removed from the DOM (component destroyed), skip.
+    if (!container.isConnected) {
+      resolve()
+      return
+    }
+
+    // Safety timeout — never block the queue for more than 10 seconds
+    const timeout = setTimeout(resolve, 10_000)
+
     // Set atOptions globally (Adsterra reads this)
     ;(window as any).atOptions = {
       key,
@@ -36,11 +46,16 @@ const loadAd = (container: HTMLElement, key: string, width: number, height: numb
     invokeScript.type = 'text/javascript'
     invokeScript.src = `https://www.highperformanceformat.com/${key}/invoke.js`
 
+    const done = () => {
+      clearTimeout(timeout)
+      resolve()
+    }
+
     invokeScript.onload = () => {
       // Small delay to let Adsterra finish rendering the iframe
-      setTimeout(resolve, 200)
+      setTimeout(done, 200)
     }
-    invokeScript.onerror = () => resolve()
+    invokeScript.onerror = done
 
     container.appendChild(invokeScript)
   })
