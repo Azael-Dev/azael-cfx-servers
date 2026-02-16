@@ -160,13 +160,6 @@ export function getCountryCode(locale: string): string {
   return cc && cc.length === 2 ? cc : ''
 }
 
-/** Get flag image URL from locale code via flagcdn.com CDN */
-export function getFlagUrl(locale: string): string {
-  const cc = getCountryCode(locale)
-  if (!cc) return ''
-  return `https://flagcdn.com/w40/${cc}.png`
-}
-
 /** Format number with commas */
 export function formatNumber(num: number): string {
   return num.toLocaleString('en-US')

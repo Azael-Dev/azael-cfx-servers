@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { computed, ref, onBeforeUnmount } from 'vue'
 import type { Server } from '@/types'
-import { renderHostname, formatNumber, getPlayerFillPercent, getFlagUrl, getConnectUrl, getServerGradient } from '@/utils/helpers'
+import { renderHostname, formatNumber, getPlayerFillPercent, getConnectUrl, getServerGradient, getCountryCode } from '@/utils/helpers'
 import { useI18n } from '@/i18n'
 import { useServerIcon } from '@/composables/useServerIcon'
 import { expandedServerIds } from '@/composables/useServers'
+import { getCountryFlagUrl } from '@/composables/useCountryFlag'
 import ServerCardDetail from './ServerCardDetail.vue'
 
 const { t } = useI18n()
@@ -37,7 +38,10 @@ const subtitle = computed(() =>
     : ''
 )
 
-const flagSrc = computed(() => getFlagUrl(props.server.locale))
+const flagSrc = computed(() => {
+  const cc = getCountryCode(props.server.locale)
+  return cc ? getCountryFlagUrl(cc) : ''
+})
 
 /** Deterministic gradient for icon fallback */
 const serverGradient = computed(() => getServerGradient(props.server.endpoint))

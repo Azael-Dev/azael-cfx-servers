@@ -4,6 +4,8 @@ import { fetchAllServers, fetchPlayerCounts, clearCache } from '@/services/api'
 import { normalizeServer } from '@/utils/helpers'
 import { DEFAULT_PER_PAGE, REFRESH_INTERVAL } from '@/constants'
 import { useGeoLocation } from '@/composables/useGeoLocation'
+import { getCountryFlagUrl } from '@/composables/useCountryFlag'
+import { useI18n } from '@/i18n'
 
 const servers = ref<Server[]>([])
 const loading = ref(false)
@@ -34,27 +36,35 @@ const filters = ref<FilterState>({
 })
 
 /**
+ * Common non-standard region codes used by FiveM servers
+ * mapped to their ISO 3166-1 alpha-2 equivalents.
+ */
+const REGION_ALIASES: Record<string, string> = {
+  UK: 'GB', // United Kingdom
+}
+
+/**
  * Extract a valid ISO 3166-1 alpha-2 region code from a locale string.
+ * Handles common aliases (e.g. 'en-UK' → 'GB').
  * Returns uppercase 2-letter code or '' if invalid.
  */
 function extractRegion(code: string): string {
   const parts = code.split(/[-_]/)
-  const region = parts[1]?.toUpperCase()
-  // Must be exactly 2 uppercase letters (A-Z)
-  if (region && /^[A-Z]{2}$/.test(region)) return region
-  return ''
+  let region = parts[1]?.toUpperCase()
+  if (!region || !/^[A-Z]{2}$/.test(region)) return ''
+  region = REGION_ALIASES[region] || region
+  return region
 }
 
 /**
- * Get country display name for a locale code using Intl.DisplayNames.
- * Uses the region part (e.g. 'en-US' → 'United States', 'th-TH' → 'Thailand').
+ * Get country display name for a region code using Intl.DisplayNames.
+ * @param region - ISO 3166-1 alpha-2 code (e.g. 'US', 'TH')
+ * @param uiLang - BCP 47 tag for the display language (e.g. 'en', 'th')
  * Returns '' if the region is invalid or not recognized.
  */
-function getCountryDisplayName(code: string): string {
-  const region = extractRegion(code)
-  if (!region) return ''
+function getCountryDisplayName(region: string, uiLang: string): string {
+  if (!region || !/^[A-Z]{2}$/.test(region)) return ''
   try {
-    const uiLang = navigator.language || 'en'
     const regionDisplay = new Intl.DisplayNames([uiLang], { type: 'region' })
     const name = regionDisplay.of(region)
     // Intl.DisplayNames returns the input code itself when unrecognized
@@ -99,15 +109,17 @@ const localeMap = computed(() => {
   return regionMap
 })
 
+const { currentLocale: i18nLocale } = useI18n()
+
 const dynamicLocaleOptions = computed<DynamicLocaleOption[]>(() => {
+  const uiLang = i18nLocale.value // reactive dependency on site language
   const options: DynamicLocaleOption[] = []
 
-  for (const [region, { codes, count }] of localeMap.value) {
+  for (const [region, { count }] of localeMap.value) {
     if (count === 0) continue
-    const label = getCountryDisplayName([...codes][0]!)
+    const label = getCountryDisplayName(region, uiLang)
     if (!label) continue // unrecognized country → skip
-    const cc = region.toLowerCase()
-    const flagUrl = `https://flagcdn.com/w40/${cc}.png`
+    const flagUrl = getCountryFlagUrl(region)
     options.push({
       code: region, // use region code (e.g. 'US', 'TH') as the filter key
       label,

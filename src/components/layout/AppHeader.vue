@@ -5,6 +5,7 @@ import type { Locale } from '@/i18n/types'
 import { formatNumber } from '@/utils/helpers'
 import { useI18n } from '@/i18n'
 import { SOCIAL_LINKS } from '@/constants'
+import { getCountryFlagUrl } from '@/composables/useCountryFlag'
 
 const { t, currentLocale, setLocale, availableLocales } = useI18n()
 
@@ -153,7 +154,7 @@ onUnmounted(() => document.removeEventListener('click', handleClickOutside))
                   ]"
                 >
                   <img
-                    :src="`https://flagcdn.com/w40/${loc.countryCode}.png`"
+                    :src="getCountryFlagUrl(loc.countryCode)"
                     :alt="loc.label"
                     class="h-3 w-5 rounded-sm object-cover"
                     loading="lazy"
