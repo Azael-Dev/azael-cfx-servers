@@ -98,7 +98,7 @@ onMounted(async () => {
                 } else if (v.startsWith('http')) {
                     url = v.trim()
                 } else if (/^[a-zA-Z0-9-]+$/.test(v.trim())) {
-                    // กรณีเป็น invite code ล้วน ๆ
+                    // If it's just a code without URL, assume it's a Discord invite code
                     url = `https://discord.gg/${v.trim()}`
                 }
 
