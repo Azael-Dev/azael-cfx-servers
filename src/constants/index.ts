@@ -31,8 +31,8 @@ export const API = {
     `https://servers-frontend.fivem.net/api/servers/icon/${endpoint}/${iconVersion}.png`,
   /** Cfx.re tweets feed */
   TWEETS: 'https://runtime.fivem.net/tweets.json',
-  /** Geolocation API (no CORS, must be called server-side or via proxy) */
-  GEOLOCATION: 'http://ip-api.com/json/?fields=status,message,countryCode',
+  /** Geolocation API (CORS-enabled, returns country_code) */
+  GEOLOCATION: 'https://ipwho.is/?fields=success,message,country_code',
 } as const
 
 /** Cache duration in milliseconds (5 minutes) */
