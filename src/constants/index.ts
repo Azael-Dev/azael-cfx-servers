@@ -15,6 +15,8 @@ export const DEFAULT_PER_PAGE = 30
 
 /** API base URLs */
 export const API = {
+  /** CORS proxy */
+  CORS_PROXY: 'https://corsproxy.io',
   /** All server data — CORS-enabled stream (primary for browser) */
   STREAM_CFX: 'https://frontend.cfx-services.net/api/servers/stream/',
   /** All server data via redirect (302 lacks CORS — only usable server-side) */

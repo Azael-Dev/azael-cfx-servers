@@ -334,24 +334,44 @@ async function parseStreamResponse(
 }
 
 /**
- * Fetch single server details
+ * Fetch single server details.
+ * Tries the direct endpoint first; falls back to CORS proxy if blocked.
  */
 export async function fetchSingleServer(address: string): Promise<CfxServer | null> {
   const cacheKey = `server-${address}`
   const cached = getCached<CfxServer>(cacheKey)
   if (cached) return cached
 
+  const directUrl = `${API.SINGLE_SERVER}/${address}`
+  const proxyUrl = `${API.CORS_PROXY}/?${encodeURIComponent(directUrl)}`
+
+  // Try direct first
   try {
-    const response = await fetch(`${API.SINGLE_SERVER}/${address}`)
+    const response = await fetch(directUrl)
+    
+    if (response.ok) {
+      const data = await response.json()
+      const server: CfxServer = {
+        EndPoint: data.EndPoint || address,
+        Data: data.Data || data,
+      }
+      setCache(cacheKey, server)
+      return server
+    }
+  } catch {
+    // ignore and try proxy
+  }
+
+  // Fallback: CORS proxy
+  try {
+    const response = await fetch(proxyUrl)
     if (!response.ok) return null
-
+    
     const data = await response.json()
-
     const server: CfxServer = {
       EndPoint: data.EndPoint || address,
       Data: data.Data || data,
     }
-
     setCache(cacheKey, server)
     return server
   } catch {
