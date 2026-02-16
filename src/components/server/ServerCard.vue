@@ -57,6 +57,8 @@ const iconUrl = _serverIcon.iconUrl
 const bannerUrl = _serverIcon.bannerUrl
 const upvotePower = _serverIcon.upvotePower
 const iconLoading = _serverIcon.iconLoading
+const serverLoadFailed = _serverIcon.loadFailed
+const connectEnabled = _serverIcon.connectEnabled
 
 /** Icon error handling */
 const iconError = ref(false)
@@ -95,7 +97,7 @@ const isDesktop = typeof window !== 'undefined'
   : null
 
 let hoverTimer: ReturnType<typeof setTimeout> | null = null
-const HOVER_DELAY = 400 // ms before expand on hover
+const HOVER_DELAY = 1000 // ms before expand on hover
 
 /** Detect Windows platform for Connect button (fivem:// protocol) */
 const isWindows = typeof navigator !== 'undefined'
@@ -104,9 +106,13 @@ const isWindows = typeof navigator !== 'undefined'
 /** Track if mouse is over the Connect button to prevent card expansion */
 const isOverConnect = ref(false)
 
+/** Connect button should be disabled by default, enabled only after successful load & non-private */
+const connectDisabled = computed(() => !connectEnabled.value)
+
 function handleMouseEnter() {
   if (!isDesktop?.matches) return
   if (isOverConnect.value) return
+  if (serverLoadFailed.value) return // don't expand if loading failed
   hoverTimer = setTimeout(() => { expanded.value = true }, HOVER_DELAY)
 }
 
@@ -128,10 +134,20 @@ function handleConnectLeave() {
   }
 }
 
+function handleDetailLoaded(payload: { loadFailed: boolean; isPrivate: boolean }) {
+  // If load failed, collapse the card immediately
+  if (payload.loadFailed) {
+    expanded.value = false
+  }
+}
+
 function handleCardClick(e: MouseEvent) {
   // Don't toggle when clicking interactive elements (links, buttons)
   const target = e.target as HTMLElement
   if (target.closest('a, button')) return
+
+  // Don't expand if loading failed
+  if (serverLoadFailed.value) return
 
   // On touch devices, toggle on click
   if (!isDesktop?.matches) {
@@ -270,7 +286,20 @@ onBeforeUnmount(() => {
         @mouseenter="handleConnectEnter"
         @mouseleave="handleConnectLeave"
       >
+        <!-- Disabled state: load failed or private server -->
+        <span
+          v-if="connectDisabled"
+          class="flex items-center gap-1.5 rounded-lg bg-surface-700 px-3 py-1.5 text-xs font-medium text-gray-500 cursor-not-allowed select-none"
+          :title="serverLoadFailed ? t.connectUnavailable : t.connectPrivate"
+        >
+          <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M5 3v18l15-9L5 3z" />
+          </svg>
+          <span class="hidden sm:inline">{{ t.connect }}</span>
+        </span>
+        <!-- Normal state -->
         <a
+          v-else
           :href="getConnectUrl(server.gameType, server.id)"
           class="flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-1.5 text-xs font-medium text-white shadow-lg shadow-primary-600/20 transition-all duration-200 hover:bg-primary-500 hover:shadow-primary-500/30 active:scale-95"
           @click.stop
@@ -308,6 +337,7 @@ onBeforeUnmount(() => {
           :endpoint="server.endpoint"
           :game-type="server.gameType"
           :server-id="server.id"
+          @loaded="handleDetailLoaded"
         />
       </div>
     </Transition>

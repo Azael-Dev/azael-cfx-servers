@@ -59,6 +59,11 @@ export interface TranslationSchema {
   detailPlayerName: string
   detailPlayerPing: string
   detailPureLevel: string
+  detailLoadFailed: string
+
+  // Server card (connect button states)
+  connectUnavailable: string
+  connectPrivate: string
 
   // Server list
   noServersFound: string

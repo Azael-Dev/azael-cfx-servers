@@ -59,6 +59,11 @@ const en: TranslationSchema = {
   detailPlayerName: 'Name',
   detailPlayerPing: 'Ping',
   detailPureLevel: 'Pure Mode',
+  detailLoadFailed: 'Failed to load server details',
+
+  // Server card (connect button states)
+  connectUnavailable: 'Server details unavailable',
+  connectPrivate: 'This server is private',
 
   // Server list
   noServersFound: 'No servers found',

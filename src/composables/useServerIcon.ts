@@ -3,7 +3,7 @@ import { fetchSingleServer } from '@/services/api'
 import { API } from '@/constants';
 
 /** In-memory icon cache shared across all ServerCard instances */
-const iconCache = new Map<string, { iconUrl: string; bannerUrl: string; upvotePower: number; burstPower: number }>()
+const iconCache = new Map<string, { iconUrl: string; bannerUrl: string; upvotePower: number; burstPower: number; loadFailed: boolean; isPrivate: boolean }>()
 
 /**
  * Lazy-load server icon & banner via the single-server JSON API.
@@ -18,6 +18,10 @@ export function useServerIcon(endpoint: string, fallbackBanner: string, initialU
     const upvotePower = ref(initialUpvotePower)
     const burstPower = ref(initialBurstPower)
     const loading = ref(false)
+    const loadFailed = ref(false)
+    const isPrivate = ref(false)
+    /** Connect is disabled by default until data is successfully loaded */
+    const connectEnabled = ref(false)
 
     /** Check cache first */
     const cached = iconCache.get(endpoint)
@@ -26,6 +30,9 @@ export function useServerIcon(endpoint: string, fallbackBanner: string, initialU
         if (cached.bannerUrl) bannerUrl.value = cached.bannerUrl
         upvotePower.value = cached.upvotePower
         burstPower.value = cached.burstPower
+        loadFailed.value = cached.loadFailed
+        isPrivate.value = cached.isPrivate
+        connectEnabled.value = !cached.loadFailed && !cached.isPrivate
     }
 
     /** Intersection Observer ref — set this on the card root element */
@@ -50,7 +57,12 @@ export function useServerIcon(endpoint: string, fallbackBanner: string, initialU
         loading.value = true
         try {
         const server = await fetchSingleServer(endpoint)
-        if (!server) return
+        if (!server) {
+            loadFailed.value = true
+            connectEnabled.value = false
+            iconCache.set(endpoint, { iconUrl: '', bannerUrl: fallbackBanner, upvotePower: initialUpvotePower, burstPower: initialBurstPower, loadFailed: true, isPrivate: false })
+            return
+        }
 
         const data = server.Data
         const vars = data.vars || {}
@@ -61,11 +73,15 @@ export function useServerIcon(endpoint: string, fallbackBanner: string, initialU
             || fallbackBanner
         const resolvedUpvotePower = data.upvotePower || 0
         const resolvedBurstPower = data.burstPower || 0
+        const resolvedIsPrivate = data.private || false
 
         iconUrl.value = resolvedIcon
         if (resolvedBanner) bannerUrl.value = resolvedBanner
         upvotePower.value = resolvedUpvotePower
         burstPower.value = resolvedBurstPower
+        isPrivate.value = resolvedIsPrivate
+        loadFailed.value = false
+        connectEnabled.value = !resolvedIsPrivate
 
         // Cache for reuse (e.g. when paginating back)
         iconCache.set(endpoint, {
@@ -73,9 +89,14 @@ export function useServerIcon(endpoint: string, fallbackBanner: string, initialU
             bannerUrl: resolvedBanner,
             upvotePower: resolvedUpvotePower,
             burstPower: resolvedBurstPower,
+            loadFailed: false,
+            isPrivate: resolvedIsPrivate,
         })
         } catch {
         // silently fail — fallback SVG will show
+        loadFailed.value = true
+        connectEnabled.value = false
+        iconCache.set(endpoint, { iconUrl: '', bannerUrl: fallbackBanner, upvotePower: initialUpvotePower, burstPower: initialBurstPower, loadFailed: true, isPrivate: false })
         } finally {
         loading.value = false
         }
@@ -117,5 +138,8 @@ export function useServerIcon(endpoint: string, fallbackBanner: string, initialU
         upvotePower,
         burstPower,
         iconLoading: loading,
+        loadFailed,
+        isPrivate,
+        connectEnabled,
     }
 }

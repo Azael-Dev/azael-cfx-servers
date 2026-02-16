@@ -13,6 +13,10 @@ const props = defineProps<{
     serverId: string
 }>()
 
+const emit = defineEmits<{
+    (e: 'loaded', payload: { loadFailed: boolean; isPrivate: boolean }): void
+}>()
+
 const loading = ref(true)
 const detailResources = ref<string[]>([])
 const detailPlayers = ref<CfxPlayer[]>([])
@@ -49,10 +53,16 @@ const shortServerVersion = computed(() => {
     return match ? match[0] : serverVersion.value
 })
 
+const loadFailed = ref(false)
+
 onMounted(async () => {
     try {
         const server = await fetchSingleServer(props.endpoint)
-        if (!server) return
+        if (!server) {
+            loadFailed.value = true
+            emit('loaded', { loadFailed: true, isPrivate: false })
+            return
+        }
 
         const data = server.Data
         const vars = data.vars || {}
@@ -70,8 +80,11 @@ onMounted(async () => {
         isPrivate.value = data.private || false
         pureLevel.value = parseInt(vars['sv_pureLevel'] || '0', 10) || 0
         ownerProfile.value = data.ownerProfile || vars['ownerProfile'] || ''
+
+        emit('loaded', { loadFailed: false, isPrivate: isPrivate.value })
     } catch {
-        // silent fail
+        loadFailed.value = true
+        emit('loaded', { loadFailed: true, isPrivate: false })
     } finally {
         loading.value = false
     }
@@ -87,6 +100,14 @@ onMounted(async () => {
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
             <span class="text-xs">{{ t.detailLoading }}</span>
+        </div>
+
+        <!-- Load Failed -->
+        <div v-else-if="loadFailed" class="flex items-center justify-center gap-2 py-6 text-red-400/80">
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+            <span class="text-xs">{{ t.detailLoadFailed }}</span>
         </div>
 
         <!-- Detail Content -->
