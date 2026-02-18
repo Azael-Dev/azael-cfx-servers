@@ -1,5 +1,13 @@
 import type { SortOption } from '@/types'
 
+/** Ad slot enablement configuration */
+export const AD_ENABLED = {
+  HEADER: false,              // Enable header leaderboard
+  CONTENT: false,             // Enable inline content ads
+  SIDEBAR: false,             // Enable sidebar rectangles
+  FOOTER: true,               // Enable footer banner
+} as const
+
 /** Sort option presets (labelKey references TranslationSchema keys) */
 export const SORT_OPTIONS: SortOption[] = [
   { field: 'players', order: 'desc', labelKey: 'sortPlayersDesc' },

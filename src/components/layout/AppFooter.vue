@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from '@/i18n'
+import { AD_ENABLED } from '@/constants'
 import AdBanner from '@/components/layout/AdBanner.vue'
 import type { AdSlot } from '@/types'
 
 const { t, tt } = useI18n()
 
-const footerAd: AdSlot = { id: 'footer-banner', position: 'footer', size: 'banner', enabled: true }
+const footerAd: AdSlot = { id: 'footer-banner', position: 'footer', size: 'banner', enabled: AD_ENABLED.FOOTER }
 
 const copyrightYear = computed(() => {
     return new Date().getFullYear()

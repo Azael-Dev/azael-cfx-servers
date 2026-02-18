@@ -3,6 +3,7 @@ import { onMounted, watch } from 'vue'
 import { useServers } from '@/composables/useServers'
 import { useSeo } from '@/composables/useSeo'
 import { useI18n } from '@/i18n'
+import { AD_ENABLED } from '@/constants'
 import type { AdSlot, SortField, SortOrder } from '@/types'
 
 const { t } = useI18n()
@@ -37,10 +38,10 @@ const {
 } = useServers()
 
 // Ad slot configurations
-const headerAd: AdSlot = { id: 'header-banner', position: 'header', size: 'leaderboard', enabled: true }
-const sidebarAd: AdSlot = { id: 'sidebar-rect', position: 'sidebar', size: 'rectangle', enabled: true }
-const sidebarAd2: AdSlot = { id: 'sidebar-rect-2', position: 'sidebar', size: 'rectangle', enabled: true }
-const sidebarAd3: AdSlot = { id: 'sidebar-rect-3', position: 'sidebar', size: 'rectangle', enabled: true }
+const headerAd: AdSlot = { id: 'header-banner', position: 'header', size: 'leaderboard', enabled: AD_ENABLED.HEADER }
+const sidebarAd: AdSlot = { id: 'sidebar-rect', position: 'sidebar', size: 'rectangle', enabled: AD_ENABLED.SIDEBAR }
+const sidebarAd2: AdSlot = { id: 'sidebar-rect-2', position: 'sidebar', size: 'rectangle', enabled: AD_ENABLED.SIDEBAR }
+const sidebarAd3: AdSlot = { id: 'sidebar-rect-3', position: 'sidebar', size: 'rectangle', enabled: AD_ENABLED.SIDEBAR }
 
 function handleSortUpdate(field: SortField, order: SortOrder) {
   filters.value.sortBy = field

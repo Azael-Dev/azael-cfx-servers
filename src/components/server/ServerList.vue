@@ -3,6 +3,7 @@ import type { Server, AdSlot } from '@/types'
 import ServerCard from './ServerCard.vue'
 import AdBanner from '@/components/layout/AdBanner.vue'
 import { useI18n } from '@/i18n'
+import { AD_ENABLED } from '@/constants'
 
 const { t } = useI18n()
 
@@ -20,7 +21,7 @@ const inlineAdSlot: AdSlot = {
   id: 'inline-server-list',
   position: 'inline',
   size: 'leaderboard',
-  enabled: true,
+  enabled: AD_ENABLED.CONTENT,
 }
 </script>
 
