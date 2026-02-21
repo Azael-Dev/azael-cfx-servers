@@ -17,10 +17,10 @@ export const ADSENSE = {
    * Replace each value with real ad unit IDs from your AdSense dashboard.
    */
   SLOTS: {
-    HEADER: '1234567890',        // 728×90  responsive leaderboard  (top of page)
-    INLINE: '2345678901',        // 728×90  responsive leaderboard  (between server cards)
-    SIDEBAR: '3456789012',       // 300×250 fixed rectangle          (desktop sidebar)
-    FOOTER: '4567890123',        // responsive horizontal banner     (footer)
+    HEADER: '3697650232',        // 728×90  responsive leaderboard  (top of page)
+    INLINE: '3697650232',        // 728×90  responsive leaderboard  (between server cards)
+    SIDEBAR: '2468329041',       // 300×250 fixed rectangle          (desktop sidebar)
+    FOOTER: '3697650232',        // responsive horizontal banner     (footer)
   },
 } as const
 
