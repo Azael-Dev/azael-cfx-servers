@@ -21,7 +21,7 @@ A modern web application to browse FiveM and RedM server lists with search, filt
 - 📱 Fully responsive design
 - 🌐 Multi-language support (English & Thai) with auto-detection
 - 🔎 SEO optimized (meta tags, Open Graph, JSON-LD, sitemap)
-- 📢 Adsterra ad integration (leaderboard, rectangle, banner)
+- 📢 Google AdSense ad integration (leaderboard, rectangle, banner)
 - 🛡️ Ad blocker detection with user notification
 - ♻️ Auto-refresh data every 60 seconds
 - 🧩 Extensible architecture for future growth
@@ -96,19 +96,20 @@ public/
 
 ## Ad Integration
 
-Ads are managed centrally through `AdBanner.vue`. Current ad slots:
+Ads are powered by **Google AdSense** and managed centrally through `AdBanner.vue`. Current ad slots:
 
 | Slot | Size | Location | Type |
 |---|---|---|---|
-| `header-banner` | 728×90 | Top of page | Adsterra iframe |
-| `inline-server-list` | 728×90 | Between server cards (every 10) | Adsterra iframe |
-| `sidebar-rect` | 300×250 | Desktop sidebar | Adsterra iframe |
-| `footer-banner` | 720×90 | Footer | Static banner |
+| `header-banner` | 728×90 | Top of page | AdSense responsive |
+| `inline-server-list` | 728×90 | Between server cards (every 10) | AdSense responsive |
+| `sidebar-rect` | 300×250 | Desktop sidebar | AdSense fixed |
+| `footer-banner` | Responsive | Footer | AdSense responsive |
 
 ### Configuring ads:
-1. Edit `AdBanner.vue` — update Adsterra keys or replace with other ad code
-2. Configure ad slots in `HomePage.vue` and `AppFooter.vue`
-3. Ad blocker detection is handled by `AdBlockDetector.vue` with a modal notification
+1. Update your **Publisher ID** (`ca-pub-XXXXXXXXXXXXXXXX`) in `index.html` and `constants/index.ts` (`ADSENSE.CLIENT_ID`)
+2. Update **ad unit slot IDs** in `constants/index.ts` (`ADSENSE.SLOTS`) with values from your AdSense dashboard
+3. Toggle ad positions on/off via `AD_ENABLED` in `constants/index.ts`
+4. Ad blocker detection is handled by `AdBlockDetector.vue` with a modal notification
 
 ## SEO
 
@@ -122,4 +123,3 @@ Ads are managed centrally through `AdBanner.vue`. Current ad slots:
 ## License
 
 MIT
-

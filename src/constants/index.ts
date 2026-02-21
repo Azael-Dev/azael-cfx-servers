@@ -8,6 +8,19 @@ export const AD_ENABLED = {
   FOOTER: true,               // Enable footer banner
 } as const
 
+/** Google AdSense configuration */
+export const ADSENSE = {
+  /** Publisher client ID (must match the script in index.html) */
+  CLIENT_ID: 'ca-pub-3218585194390171',
+  /** Ad unit slot IDs — replace with your actual AdSense ad unit IDs */
+  SLOTS: {
+    LEADERBOARD: '1234567890',   // 728×90 responsive (header, inline)
+    RECTANGLE: '0987654321',     // 300×250 fixed (sidebar)
+    BANNER: '1122334455',        // Responsive banner (footer)
+    SKYSCRAPER: '5566778899',    // 160×600 (unused currently)
+  },
+} as const
+
 /** Sort option presets (labelKey references TranslationSchema keys) */
 export const SORT_OPTIONS: SortOption[] = [
   { field: 'players', order: 'desc', labelKey: 'sortPlayersDesc' },
