@@ -2,9 +2,9 @@ import type { SortOption } from '@/types'
 
 /** Ad slot enablement configuration */
 export const AD_ENABLED = {
-  HEADER: false,              // Enable header leaderboard
-  CONTENT: false,             // Enable inline content ads
-  SIDEBAR: false,             // Enable sidebar rectangles
+  HEADER: true,              // Enable header leaderboard
+  CONTENT: true,             // Enable inline content ads
+  SIDEBAR: true,             // Enable sidebar rectangles
   FOOTER: true,               // Enable footer banner
 } as const
 
@@ -12,12 +12,15 @@ export const AD_ENABLED = {
 export const ADSENSE = {
   /** Publisher client ID (must match the script in index.html) */
   CLIENT_ID: 'ca-pub-3218585194390171',
-  /** Ad unit slot IDs — replace with your actual AdSense ad unit IDs */
+  /**
+   * Ad unit slot IDs per position.
+   * Replace each value with real ad unit IDs from your AdSense dashboard.
+   */
   SLOTS: {
-    LEADERBOARD: '1234567890',   // 728×90 responsive (header, inline)
-    RECTANGLE: '0987654321',     // 300×250 fixed (sidebar)
-    BANNER: '1122334455',        // Responsive banner (footer)
-    SKYSCRAPER: '5566778899',    // 160×600 (unused currently)
+    HEADER: '1234567890',        // 728×90  responsive leaderboard  (top of page)
+    INLINE: '2345678901',        // 728×90  responsive leaderboard  (between server cards)
+    SIDEBAR: '3456789012',       // 300×250 fixed rectangle          (desktop sidebar)
+    FOOTER: '4567890123',        // responsive horizontal banner     (footer)
   },
 } as const
 

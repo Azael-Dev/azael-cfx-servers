@@ -17,34 +17,37 @@ declare global {
 }
 
 /**
- * Map ad slot to the corresponding Google AdSense ad-slot ID.
- * Update ADSENSE.SLOTS in constants/index.ts with your actual AdSense ad unit IDs.
+ * Map ad slot to the corresponding Google AdSense ad-unit ID by position.
+ * Each position uses its own ad unit for accurate reporting in AdSense.
  */
 const adSlotId = computed(() => {
-  switch (props.adSlot.size) {
-    case 'leaderboard':
-      return ADSENSE.SLOTS.LEADERBOARD
-    case 'rectangle':
-      return ADSENSE.SLOTS.RECTANGLE
-    case 'banner':
-      return ADSENSE.SLOTS.BANNER
-    case 'skyscraper':
-      return ADSENSE.SLOTS.SKYSCRAPER
+  switch (props.adSlot.position) {
+    case 'header':
+      return ADSENSE.SLOTS.HEADER
+    case 'inline':
+      return ADSENSE.SLOTS.INLINE
+    case 'sidebar':
+      return ADSENSE.SLOTS.SIDEBAR
+    case 'footer':
+      return ADSENSE.SLOTS.FOOTER
     default:
-      return ADSENSE.SLOTS.LEADERBOARD
+      return ADSENSE.SLOTS.HEADER
   }
 })
 
 /**
- * Determine the ad format based on the slot size.
- * - 'auto' for responsive ads (leaderboard, banner, skyscraper)
- * - 'rectangle' uses fixed 300x250
+ * Determine the ad format per slot.
+ * - rectangle: fixed 300×250 (no format attr needed)
+ * - footer banner: 'horizontal' — prefer horizontal creatives
+ * - others (leaderboard etc.): 'auto' — responsive
  */
 const adFormat = computed(() => {
   if (props.adSlot.size === 'rectangle') return ''
+  if (props.adSlot.position === 'footer') return 'horizontal'
   return 'auto'
 })
 
+/** Rectangle uses fixed dimensions; all other slots are responsive */
 const isResponsive = computed(() => props.adSlot.size !== 'rectangle')
 
 /**
@@ -72,16 +75,16 @@ onMounted(() => {
     :class="[
       'rounded-lg border border-dashed border-surface-700 bg-surface-900/50 overflow-hidden',
       {
-        'h-[90px]': adSlot.size === 'banner' && adSlot.position !== 'footer',
         'h-[90px] w-full mb-6': adSlot.size === 'leaderboard' && adSlot.id === 'header-banner',
-        'h-[90px] w-full': adSlot.size === 'leaderboard',
+        'h-[90px] w-full': adSlot.size === 'leaderboard' && adSlot.id !== 'header-banner',
         'h-[250px] w-[300px]': adSlot.size === 'rectangle',
+        'min-h-[90px] w-full': adSlot.position === 'footer',
         'h-[600px] w-[160px]': adSlot.size === 'skyscraper',
       }
     ]"
   >
     <!-- Google AdSense Ad Container -->
-    <div ref="adContainer" :class="adSlot.position === 'footer' ? '' : 'flex items-center justify-center h-full'">
+    <div ref="adContainer" class="flex items-center justify-center h-full">
       <ins
         class="adsbygoogle"
         :style="isResponsive ? 'display:block' : 'display:inline-block;width:300px;height:250px'"

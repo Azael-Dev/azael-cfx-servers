@@ -98,16 +98,16 @@ public/
 
 Ads are powered by **Google AdSense** and managed centrally through `AdBanner.vue`. Current ad slots:
 
-| Slot | Size | Location | Type |
-|---|---|---|---|
-| `header-banner` | 728×90 | Top of page | AdSense responsive |
-| `inline-server-list` | 728×90 | Between server cards (every 10) | AdSense responsive |
-| `sidebar-rect` | 300×250 | Desktop sidebar | AdSense fixed |
-| `footer-banner` | Responsive | Footer | AdSense responsive |
+| Slot | Size | Location | Type | AdSense Slot Key |
+|---|---|---|---|---|
+| `header-banner` | 728×90 | Top of page | AdSense responsive | `HEADER` |
+| `inline-server-list` | 728×90 | Between server cards (every 10) | AdSense responsive | `INLINE` |
+| `sidebar-rect` | 300×250 | Desktop sidebar | AdSense fixed | `SIDEBAR` |
+| `footer-banner` | Responsive horizontal | Footer (grid column) | AdSense responsive | `FOOTER` |
 
 ### Configuring ads:
 1. Update your **Publisher ID** (`ca-pub-XXXXXXXXXXXXXXXX`) in `index.html` and `constants/index.ts` (`ADSENSE.CLIENT_ID`)
-2. Update **ad unit slot IDs** in `constants/index.ts` (`ADSENSE.SLOTS`) with values from your AdSense dashboard
+2. Update **ad unit slot IDs** in `constants/index.ts` (`ADSENSE.SLOTS`) — each position has its own key (`HEADER`, `INLINE`, `SIDEBAR`, `FOOTER`)
 3. Toggle ad positions on/off via `AD_ENABLED` in `constants/index.ts`
 4. Ad blocker detection is handled by `AdBlockDetector.vue` with a modal notification
 
