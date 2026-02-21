@@ -102,6 +102,13 @@ export interface TranslationSchema {
   cfxFeedEmpty: string
   cfxFeedError: string
 
+  // Ad slot labels
+  adLabelHeader: string
+  adLabelInline: string
+  adLabelSidebar: string
+  adLabelFooter: string
+  adSizeInfo: string
+
   // Ad blocker
   adBlockTitle: string
   adBlockMessage: string

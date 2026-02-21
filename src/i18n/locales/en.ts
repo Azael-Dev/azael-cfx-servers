@@ -102,6 +102,13 @@ const en: TranslationSchema = {
   cfxFeedEmpty: 'No posts available',
   cfxFeedError: 'Failed to load feed',
 
+  // Ad slot labels
+  adLabelHeader: 'Header Ad',
+  adLabelInline: 'Content Ad',
+  adLabelSidebar: 'Sidebar Ad',
+  adLabelFooter: 'Footer Ad',
+  adSizeInfo: '{width} × {height}',
+
   // Ad blocker
   adBlockTitle: 'Ad Blocker Detected',
   adBlockMessage: 'This site is free and relies on ad revenue to stay online. Please consider disabling your ad blocker to support us.',

@@ -3,12 +3,16 @@ import { ref, computed, onMounted, nextTick } from 'vue'
 import type { AdSlot } from '@/types'
 import { adBlockDetected } from '@/composables/useAdBlock'
 import { ADSENSE } from '@/constants'
+import { useI18n } from '@/i18n'
+
+const { t, tt } = useI18n()
 
 const props = defineProps<{
   adSlot: AdSlot
 }>()
 
 const adContainer = ref<HTMLDivElement | null>(null)
+const adLoaded = ref(false)
 
 declare global {
   interface Window {
@@ -50,8 +54,31 @@ const adFormat = computed(() => {
 /** Rectangle uses fixed dimensions; all other slots are responsive */
 const isResponsive = computed(() => props.adSlot.size !== 'rectangle')
 
+/** Localized label for the ad position */
+const positionLabel = computed(() => {
+  switch (props.adSlot.position) {
+    case 'header':  return t.value.adLabelHeader
+    case 'inline':  return t.value.adLabelInline
+    case 'sidebar': return t.value.adLabelSidebar
+    case 'footer':  return t.value.adLabelFooter
+    default:        return t.value.adLabelHeader
+  }
+})
+
+/** Human-readable size string (e.g. "728 × 90") */
+const sizeLabel = computed(() => {
+  switch (props.adSlot.size) {
+    case 'leaderboard': return tt('adSizeInfo', { width: 728, height: 90 })
+    case 'rectangle':   return tt('adSizeInfo', { width: 300, height: 250 })
+    case 'banner':      return tt('adSizeInfo', { width: 'Auto', height: 90 })
+    case 'skyscraper':  return tt('adSizeInfo', { width: 160, height: 600 })
+    default:            return ''
+  }
+})
+
 /**
  * Push ad request to Google AdSense after the <ins> element is rendered.
+ * Sets adLoaded = true so the placeholder text is hidden once a real ad fills.
  */
 const initAdSense = async () => {
   await nextTick()
@@ -61,6 +88,24 @@ const initAdSense = async () => {
     ;(window.adsbygoogle = window.adsbygoogle || []).push({})
   } catch {
     // AdSense may throw if the ad slot is invalid or already filled
+  }
+
+  // Watch for AdSense filling the <ins> element (it gets a child iframe/div)
+  const ins = adContainer.value.querySelector('ins.adsbygoogle')
+  if (ins) {
+    const observer = new MutationObserver(() => {
+      if (ins.childElementCount > 0) {
+        adLoaded.value = true
+        observer.disconnect()
+      }
+    })
+    observer.observe(ins, { childList: true })
+
+    // Fallback: hide placeholder after 5s regardless
+    // setTimeout(() => {
+    //   adLoaded.value = true
+    //   observer.disconnect()
+    // }, 5000)
   }
 }
 
@@ -73,7 +118,7 @@ onMounted(() => {
   <div
     v-if="adSlot.enabled && !adBlockDetected"
     :class="[
-      'rounded-lg border border-dashed border-surface-700 bg-surface-900/50 overflow-hidden',
+      'relative rounded-lg border border-dashed border-surface-700 bg-surface-900/50 overflow-hidden',
       {
         'h-[90px] w-full mb-6': adSlot.size === 'leaderboard' && adSlot.id === 'header-banner',
         'h-[90px] w-full': adSlot.size === 'leaderboard' && adSlot.id !== 'header-banner',
@@ -83,8 +128,17 @@ onMounted(() => {
       }
     ]"
   >
+    <!-- Placeholder text (shown until ad loads) -->
+    <div
+      v-if="!adLoaded"
+      class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none select-none z-0"
+    >
+      <p class="text-base font-medium text-gray-600">{{ positionLabel }}</p>
+      <p class="text-sm mt-0.5 text-gray-700">{{ sizeLabel }}</p>
+    </div>
+
     <!-- Google AdSense Ad Container -->
-    <div ref="adContainer" class="flex items-center justify-center h-full">
+    <div ref="adContainer" class="relative z-10 flex items-center justify-center h-full">
       <ins
         class="adsbygoogle"
         :style="isResponsive ? 'display:block' : 'display:inline-block;width:300px;height:250px'"

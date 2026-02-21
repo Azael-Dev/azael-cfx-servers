@@ -102,6 +102,13 @@ const th: TranslationSchema = {
   cfxFeedEmpty: 'ไม่มีโพสต์',
   cfxFeedError: 'ไม่สามารถโหลดฟีดได้',
 
+  // Ad slot labels
+  adLabelHeader: 'โฆษณาส่วนหัว',
+  adLabelInline: 'โฆษณาในเนื้อหา',
+  adLabelSidebar: 'โฆษณาแถบข้าง',
+  adLabelFooter: 'โฆษณาส่วนท้าย',
+  adSizeInfo: '{width} × {height}',
+
   // Ad blocker
   adBlockTitle: 'ตรวจพบตัวบล็อกโฆษณา',
   adBlockMessage: 'เว็บไซต์นี้ให้บริการฟรีและอาศัยรายได้จากโฆษณา กรุณาปิดตัวบล็อกโฆษณาเพื่อสนับสนุนเรา',
