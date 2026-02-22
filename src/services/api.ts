@@ -334,13 +334,21 @@ async function parseStreamResponse(
 }
 
 /**
- * Fetch single server details.
+ * Fetch single server details (resources, players, full vars).
+ * Called ONLY when a user explicitly clicks to view server details.
+ *
+ * Uses a longer cache duration (CACHE_DURATION) to reduce
+ * repeated CORS-blocked requests. The detail cache is preserved
+ * across background refreshes — only cleared on explicit full cache clear.
+ *
  * Tries the direct endpoint first; falls back to CORS proxy if blocked.
  */
 export async function fetchSingleServer(address: string): Promise<CfxServer | null> {
   const cacheKey = `server-${address}`
-  const cached = getCached<CfxServer>(cacheKey)
-  if (cached) return cached
+  const entry = cache.get(cacheKey) as CacheEntry<CfxServer> | undefined
+  if (entry && Date.now() - entry.timestamp < CACHE_DURATION) {
+    return entry.data
+  }
 
   const directUrl = `${API.SINGLE_SERVER}/${address}`
   const proxyUrl = `${API.CORS_PROXY}/?${encodeURIComponent(directUrl)}`
@@ -418,8 +426,21 @@ export async function fetchPlayerCounts(): Promise<PlayerCounts> {
 }
 
 /**
- * Clear all cached data
+ * Clear server list and player count caches.
+ * Single-server detail caches (server-*) are preserved to avoid
+ * unnecessary CORS-blocked refetches on background refresh.
  */
 export function clearCache(): void {
+  for (const key of [...cache.keys()]) {
+    if (!key.startsWith('server-')) {
+      cache.delete(key)
+    }
+  }
+}
+
+/**
+ * Clear all cached data including single-server details.
+ */
+export function clearAllCache(): void {
   cache.clear()
 }

@@ -1,6 +1,6 @@
 import { ref, reactive, watch, onUnmounted } from 'vue'
 import { fetchSingleServer } from '@/services/api'
-import { API } from '@/constants';
+import { API } from '@/constants'
 
 /** In-memory icon cache shared across all ServerCard instances */
 const iconCache = new Map<string, { iconUrl: string; bannerUrl: string; upvotePower: number; burstPower: number; loadFailed: boolean; isPrivate: boolean }>()
@@ -14,9 +14,15 @@ export const privateServerIds = reactive(new Set<string>())
 /**
  * Lazy-load server icon & banner via the single-server JSON API.
  *
- * The streaming protobuf API does NOT include `iconVersion`,
- * so we fetch `/api/servers/single/{endpoint}` only for servers
- * that are actually visible on screen (Intersection Observer).
+ * The protobuf stream data does NOT provide accurate `iconVersion`,
+ * `upvotePower`, `burstPower`, or `private` fields, so we fetch
+ * `/api/servers/single/{endpoint}` for visible cards via IntersectionObserver.
+ *
+ * Optimisations applied:
+ *  - In-memory `iconCache` avoids redundant fetches when paginating back.
+ *  - The API-level cache uses a longer `CACHE_DURATION` (5 min)
+ *    and is preserved across background list refreshes, so cards that were
+ *    already fetched will not re-trigger CORS-blocked requests.
  */
 export function useServerIcon(endpoint: string, fallbackBanner: string, initialUpvotePower = 0, initialBurstPower = 0) {
     const iconUrl = ref('')
@@ -57,6 +63,9 @@ export function useServerIcon(endpoint: string, fallbackBanner: string, initialU
         if (c.bannerUrl) bannerUrl.value = c.bannerUrl
         upvotePower.value = c.upvotePower
         burstPower.value = c.burstPower
+        loadFailed.value = c.loadFailed
+        isPrivate.value = c.isPrivate
+        connectEnabled.value = !c.loadFailed && !c.isPrivate
         return
         }
 
