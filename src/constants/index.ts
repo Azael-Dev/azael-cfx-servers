@@ -35,7 +35,10 @@ export const SORT_OPTIONS: SortOption[] = [
 ]
 
 /** Default items per page */
-export const DEFAULT_PER_PAGE = 30
+export const DEFAULT_PER_PAGE = 20
+
+/** Default tweet limit for feed display */
+export const DEFAULT_TWEET_LIMIT = 3
 
 /** API base URLs */
 export const API = {

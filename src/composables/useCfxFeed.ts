@@ -1,5 +1,5 @@
 import { ref, onMounted } from 'vue'
-import { API, CACHE_DURATION } from '@/constants'
+import { API, CACHE_DURATION, DEFAULT_TWEET_LIMIT } from '@/constants'
 import type { CfxTweet } from '@/types'
 
 const tweets = ref<CfxTweet[]>([])
@@ -7,7 +7,7 @@ const loading = ref(false)
 const error = ref<string | null>(null)
 let lastFetch = 0
 
-async function fetchTweets(limit = 5): Promise<void> {
+async function fetchTweets(limit = DEFAULT_TWEET_LIMIT): Promise<void> {
     // Skip if cached
     if (tweets.value.length > 0 && Date.now() - lastFetch < CACHE_DURATION) return
 
