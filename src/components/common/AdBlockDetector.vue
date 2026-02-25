@@ -42,7 +42,7 @@ async function detectAdBlock(): Promise<boolean> {
     // Ad blockers block network requests to ad domains
     try {
         await fetch(
-            'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js',
+            'https://www.highperformanceformat.com/b8125a056372ff94d6b97e54f84d4f62/invoke.js',
             {
                 method: 'HEAD',
                 mode: 'no-cors',

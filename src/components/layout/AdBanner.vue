@@ -2,7 +2,7 @@
 import { ref, computed, onMounted, nextTick } from 'vue'
 import type { AdSlot } from '@/types'
 import { adBlockDetected } from '@/composables/useAdBlock'
-import { ADSENSE } from '@/constants'
+import { ADSTERRA } from '@/constants'
 import { useI18n } from '@/i18n'
 
 const { t, tt } = useI18n()
@@ -14,45 +14,70 @@ const props = defineProps<{
 const adContainer = ref<HTMLDivElement | null>(null)
 const adLoaded = ref(false)
 
+// Global queue to serialize ad loading (prevent atOptions race condition)
 declare global {
   interface Window {
-    adsbygoogle: any[]
+    __adQueue?: Promise<void>
   }
 }
 
 /**
- * Map ad slot to the corresponding Google AdSense ad-unit ID by position.
- * Each position uses its own ad unit for accurate reporting in AdSense.
+ * Load a single Adsterra ad inside a sandboxed iframe to prevent page redirects.
+ * The sandbox omits allow-top-navigation so ad scripts cannot redirect the main page.
+ * allow-popups lets ad links open in a new tab instead.
  */
-const adSlotId = computed(() => {
-  switch (props.adSlot.position) {
-    case 'header':
-      return ADSENSE.SLOTS.HEADER
-    case 'inline':
-      return ADSENSE.SLOTS.INLINE
-    case 'sidebar':
-      return ADSENSE.SLOTS.SIDEBAR
-    case 'footer':
-      return ADSENSE.SLOTS.FOOTER
-    default:
-      return ADSENSE.SLOTS.HEADER
-  }
-})
+const loadAd = (container: HTMLElement, key: string, width: number, height: number): Promise<void> => {
+  return new Promise((resolve) => {
+    if (!container.isConnected) {
+      resolve()
+      return
+    }
 
-/**
- * Determine the ad format per slot.
- * - rectangle: fixed 300×250 (no format attr needed)
- * - footer banner: 'horizontal' — prefer horizontal creatives
- * - others (leaderboard etc.): 'auto' — responsive
- */
-const adFormat = computed(() => {
-  if (props.adSlot.size === 'rectangle') return ''
-  if (props.adSlot.position === 'footer') return 'horizontal'
-  return 'auto'
-})
+    const timeout = setTimeout(resolve, 10_000)
 
-/** Rectangle uses fixed dimensions; all other slots are responsive */
-const isResponsive = computed(() => props.adSlot.size !== 'rectangle')
+    const htmlContent = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>html,body{margin:0;padding:0;overflow:hidden;background:transparent;}</style>
+</head>
+<body>
+<script>var atOptions={key:'${key}',format:'iframe',height:${height},width:${width},params:{}}<\/script>
+<script src="${ADSTERRA.INVOKE_BASE}/${key}/invoke.js"><\/script>
+</body>
+</html>`
+
+    const blob = new Blob([htmlContent], { type: 'text/html' })
+    const blobUrl = URL.createObjectURL(blob)
+
+    const iframe = document.createElement('iframe')
+    // Sandbox: allow scripts, same-origin (for cookies), popups (new tab), but NOT allow-top-navigation → no redirects
+    iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox')
+    iframe.style.width = `${width}px`
+    iframe.style.height = `${height}px`
+    iframe.style.maxWidth = '100%'
+    iframe.style.border = 'none'
+    iframe.style.display = 'block'
+    iframe.src = blobUrl
+
+    const done = () => {
+      clearTimeout(timeout)
+      adLoaded.value = true
+      resolve()
+    }
+
+    iframe.onload = () => {
+      URL.revokeObjectURL(blobUrl)
+      setTimeout(done, 200)
+    }
+    iframe.onerror = () => {
+      URL.revokeObjectURL(blobUrl)
+      done()
+    }
+
+    container.appendChild(iframe)
+  })
+}
 
 /** Localized label for the ad position */
 const positionLabel = computed(() => {
@@ -70,47 +95,75 @@ const sizeLabel = computed(() => {
   switch (props.adSlot.size) {
     case 'leaderboard': return tt('adSizeInfo', { width: 728, height: 90 })
     case 'rectangle':   return tt('adSizeInfo', { width: 300, height: 250 })
-    case 'banner':      return tt('adSizeInfo', { width: 'Auto', height: 90 })
+    case 'banner':      return tt('adSizeInfo', { width: 720, height: 90 })
     case 'skyscraper':  return tt('adSizeInfo', { width: 160, height: 600 })
     default:            return ''
   }
 })
 
 /**
- * Push ad request to Google AdSense after the <ins> element is rendered.
- * Sets adLoaded = true so the placeholder text is hidden once a real ad fills.
+ * Load Adsterra ad into the container.
+ * Footer uses a static referral banner; other slots use Adsterra iframe ads.
+ * Ads are queued globally to prevent atOptions race conditions.
  */
-const initAdSense = async () => {
+const loadAdsterraScript = async () => {
   await nextTick()
   if (!adContainer.value) return
 
-  try {
-    ;(window.adsbygoogle = window.adsbygoogle || []).push({})
-  } catch {
-    // AdSense may throw if the ad slot is invalid or already filled
+  // Clear previous content
+  adContainer.value.innerHTML = ''
+
+  let key = ''
+  let width = 0
+  let height = 0
+
+  // Footer banner (static image link)
+  if (props.adSlot.position === 'footer' && props.adSlot.id === 'footer-banner') {
+    const link = document.createElement('a')
+    link.href = ADSTERRA.REFERRAL.URL
+    link.target = '_blank'
+    link.rel = 'nofollow noopener noreferrer'
+
+    const img = document.createElement('img')
+    img.alt = 'banner'
+    img.src = ADSTERRA.REFERRAL.BANNER
+    img.style.maxWidth = '100%'
+    img.style.height = 'auto'
+    img.style.display = 'block'
+
+    link.appendChild(img)
+    adContainer.value.appendChild(link)
+    adLoaded.value = true
+    return
   }
 
-  // Watch for AdSense filling the <ins> element (it gets a child iframe/div)
-  const ins = adContainer.value.querySelector('ins.adsbygoogle')
-  if (ins) {
-    const observer = new MutationObserver(() => {
-      if (ins.childElementCount > 0) {
-        adLoaded.value = true
-        observer.disconnect()
-      }
-    })
-    observer.observe(ins, { childList: true })
-
-    // Fallback: hide placeholder after 5s regardless
-    // setTimeout(() => {
-    //   adLoaded.value = true
-    //   observer.disconnect()
-    // }, 5000)
+  // Leaderboard ads (728×90) for header-banner and inline-server-list
+  if (
+    props.adSlot.size === 'leaderboard' &&
+    (props.adSlot.id === 'header-banner' || props.adSlot.id === 'inline-server-list')
+  ) {
+    key = ADSTERRA.KEYS.LEADERBOARD
+    width = 728
+    height = 90
   }
+  // Rectangle ads (300×250) for sidebar
+  else if (props.adSlot.size === 'rectangle' && props.adSlot.id.startsWith('sidebar-rect')) {
+    key = ADSTERRA.KEYS.RECTANGLE
+    width = 300
+    height = 250
+  }
+
+  if (!key) return
+
+  const container = adContainer.value
+
+  // Chain onto the global queue so ads load one at a time
+  const prev = window.__adQueue ?? Promise.resolve()
+  window.__adQueue = prev.then(() => loadAd(container, key, width, height))
 }
 
 onMounted(() => {
-  initAdSense()
+  loadAdsterraScript()
 })
 </script>
 
@@ -123,7 +176,8 @@ onMounted(() => {
         'h-[90px] w-full mb-6': adSlot.size === 'leaderboard' && adSlot.id === 'header-banner',
         'h-[90px] w-full': adSlot.size === 'leaderboard' && adSlot.id !== 'header-banner',
         'h-[250px] w-[300px]': adSlot.size === 'rectangle',
-        'min-h-[90px] w-full': adSlot.position === 'footer',
+        'min-h-[90px] w-full': adSlot.position === 'footer' && !adLoaded,
+        'w-full': adSlot.position === 'footer' && adLoaded,
         'h-[600px] w-[160px]': adSlot.size === 'skyscraper',
       }
     ]"
@@ -137,16 +191,10 @@ onMounted(() => {
       <p class="text-sm mt-0.5 text-gray-700">{{ sizeLabel }}</p>
     </div>
 
-    <!-- Google AdSense Ad Container -->
-    <div ref="adContainer" class="relative z-10 flex items-center justify-center h-full">
-      <ins
-        class="adsbygoogle"
-        :style="isResponsive ? 'display:block' : 'display:inline-block;width:300px;height:250px'"
-        :data-ad-client="ADSENSE.CLIENT_ID"
-        :data-ad-slot="adSlotId"
-        :data-ad-format="adFormat || undefined"
-        :data-full-width-responsive="isResponsive ? 'true' : undefined"
-      />
-    </div>
+    <!-- Adsterra Ad Container -->
+    <div ref="adContainer" :class="[
+      'relative z-10',
+      adSlot.position === 'footer' ? '' : 'flex items-center justify-center h-full'
+    ]" />
   </div>
 </template>

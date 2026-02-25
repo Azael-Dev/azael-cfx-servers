@@ -21,7 +21,7 @@ A modern web application to browse FiveM and RedM server lists with search, filt
 - 📱 Fully responsive design
 - 🌐 Multi-language support (English & Thai) with auto-detection
 - 🔎 SEO optimized (meta tags, Open Graph, JSON-LD, sitemap)
-- 📢 Google AdSense ad integration (leaderboard, rectangle, banner)
+- 📢 Adsterra ad integration (leaderboard, rectangle, banner)
 - 🛡️ Ad blocker detection with user notification
 - ♻️ Auto-refresh data every 60 seconds
 - 🧩 Extensible architecture for future growth
@@ -96,18 +96,18 @@ public/
 
 ## Ad Integration
 
-Ads are powered by **Google AdSense** and managed centrally through `AdBanner.vue`. Current ad slots:
+Ads are powered by **Adsterra** and managed centrally through `AdBanner.vue`. Current ad slots:
 
-| Slot | Size | Location | Type | AdSense Slot Key |
-|---|---|---|---|---|
-| `header-banner` | 728×90 | Top of page | AdSense responsive | `HEADER` |
-| `inline-server-list` | 728×90 | Between server cards (every 10) | AdSense responsive | `INLINE` |
-| `sidebar-rect` | 300×250 | Desktop sidebar | AdSense fixed | `SIDEBAR` |
-| `footer-banner` | Responsive horizontal | Footer (grid column) | AdSense responsive | `FOOTER` |
+| Slot | Size | Location | Type |
+|---|---|---|---|
+| `header-banner` | 728×90 | Top of page | Adsterra iframe |
+| `inline-server-list` | 728×90 | Between server cards (every 10) | Adsterra iframe |
+| `sidebar-rect` | 300×250 | Desktop sidebar | Adsterra iframe |
+| `footer-banner` | 720×90 | Footer | Static banner |
 
 ### Configuring ads:
-1. Update your **Publisher ID** (`ca-pub-XXXXXXXXXXXXXXXX`) in `index.html` and `constants/index.ts` (`ADSENSE.CLIENT_ID`)
-2. Update **ad unit slot IDs** in `constants/index.ts` (`ADSENSE.SLOTS`) — each position has its own key (`HEADER`, `INLINE`, `SIDEBAR`, `FOOTER`)
+1. Edit `AdBanner.vue` — update Adsterra keys or replace with other ad code
+2. Update Adsterra ad unit keys in `constants/index.ts` (`ADSTERRA.KEYS`)
 3. Toggle ad positions on/off via `AD_ENABLED` in `constants/index.ts`
 4. Ad blocker detection is handled by `AdBlockDetector.vue` with a modal notification
 

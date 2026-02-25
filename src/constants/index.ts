@@ -8,20 +8,20 @@ export const AD_ENABLED = {
   FOOTER: true,               // Enable footer banner
 } as const
 
-/** Google AdSense configuration */
-export const ADSENSE = {
-  /** Publisher client ID (must match the script in index.html) */
-  CLIENT_ID: 'ca-pub-3218585194390171',
-  /**
-   * Ad unit slot IDs per position.
-   * Replace each value with real ad unit IDs from your AdSense dashboard.
-   */
-  SLOTS: {
-    HEADER: '3697650232',        // 728×90  responsive leaderboard  (top of page)
-    INLINE: '3697650232',        // 728×90  responsive leaderboard  (between server cards)
-    SIDEBAR: '2468329041',       // 300×250 fixed rectangle          (desktop sidebar)
-    FOOTER: '3697650232',        // responsive horizontal banner     (footer)
+/** Adsterra ad configuration */
+export const ADSTERRA = {
+  /** Adsterra ad unit keys per size */
+  KEYS: {
+    LEADERBOARD: 'b8125a056372ff94d6b97e54f84d4f62',  // 728×90 (header & inline)
+    RECTANGLE: '9a262d58d722a366f3ae4b3b4ae408d4',     // 300×250 (sidebar)
   },
+  /** Referral banner (footer) */
+  REFERRAL: {
+    URL: 'https://beta.publishers.adsterra.com/referral/cYffQLq5Qy',
+    BANNER: 'https://landings-cdn.adsterratech.com/referralBanners/gif/720x90_adsterra_reff.gif',
+  },
+  /** invoke.js base URL */
+  INVOKE_BASE: 'https://www.highperformanceformat.com',
 } as const
 
 /** Sort option presets (labelKey references TranslationSchema keys) */
