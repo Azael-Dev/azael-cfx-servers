@@ -14,17 +14,10 @@ const props = defineProps<{
 const adContainer = ref<HTMLDivElement | null>(null)
 const adLoaded = ref(false)
 
-// Global queue to serialize ad loading (prevent atOptions race condition)
-declare global {
-  interface Window {
-    __adQueue?: Promise<void>
-  }
-}
-
 /**
  * Load a single Adsterra ad inside a sandboxed iframe to prevent page redirects.
+ * Each iframe has its own isolated window, so ads load in parallel safely.
  * The sandbox omits allow-top-navigation so ad scripts cannot redirect the main page.
- * allow-popups lets ad links open in a new tab instead.
  */
 const loadAd = (container: HTMLElement, key: string, width: number, height: number): Promise<void> => {
   return new Promise((resolve) => {
@@ -35,7 +28,7 @@ const loadAd = (container: HTMLElement, key: string, width: number, height: numb
 
     const timeout = setTimeout(resolve, 10_000)
 
-    const htmlContent = `<!DOCTYPE html>
+    const srcdoc = `<!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
@@ -47,9 +40,6 @@ const loadAd = (container: HTMLElement, key: string, width: number, height: numb
 </body>
 </html>`
 
-    const blob = new Blob([htmlContent], { type: 'text/html' })
-    const blobUrl = URL.createObjectURL(blob)
-
     const iframe = document.createElement('iframe')
     // Sandbox: allow scripts, same-origin (for cookies), popups (new tab), but NOT allow-top-navigation → no redirects
     iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox')
@@ -58,7 +48,7 @@ const loadAd = (container: HTMLElement, key: string, width: number, height: numb
     iframe.style.maxWidth = '100%'
     iframe.style.border = 'none'
     iframe.style.display = 'block'
-    iframe.src = blobUrl
+    iframe.srcdoc = srcdoc
 
     const done = () => {
       clearTimeout(timeout)
@@ -66,14 +56,9 @@ const loadAd = (container: HTMLElement, key: string, width: number, height: numb
       resolve()
     }
 
-    iframe.onload = () => {
-      URL.revokeObjectURL(blobUrl)
-      setTimeout(done, 200)
-    }
-    iframe.onerror = () => {
-      URL.revokeObjectURL(blobUrl)
-      done()
-    }
+    // Delay to give invoke.js time to fetch and render the ad creative
+    iframe.onload = () => setTimeout(done, 1500)
+    iframe.onerror = done
 
     container.appendChild(iframe)
   })
@@ -155,11 +140,8 @@ const loadAdsterraScript = async () => {
 
   if (!key) return
 
-  const container = adContainer.value
-
-  // Chain onto the global queue so ads load one at a time
-  const prev = window.__adQueue ?? Promise.resolve()
-  window.__adQueue = prev.then(() => loadAd(container, key, width, height))
+  // Each ad is in its own sandboxed iframe (isolated window), safe to load in parallel
+  loadAd(adContainer.value, key, width, height)
 }
 
 onMounted(() => {
