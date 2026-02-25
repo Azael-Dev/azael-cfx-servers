@@ -13,6 +13,7 @@ const props = defineProps<{
 
 const adContainer = ref<HTMLDivElement | null>(null)
 const adLoaded = ref(false)
+const adFailed = ref(false)
 
 /**
  * Load a single Adsterra ad inside a sandboxed iframe to prevent page redirects.
@@ -26,7 +27,10 @@ const loadAd = (container: HTMLElement, key: string, width: number, height: numb
       return
     }
 
-    const timeout = setTimeout(resolve, 10_000)
+    const timeout = setTimeout(() => {
+      adFailed.value = true
+      resolve()
+    }, 10_000)
 
     const srcdoc = `<!DOCTYPE html>
 <html>
@@ -58,7 +62,11 @@ const loadAd = (container: HTMLElement, key: string, width: number, height: numb
 
     // Delay to give invoke.js time to fetch and render the ad creative
     iframe.onload = () => setTimeout(done, 1500)
-    iframe.onerror = done
+    iframe.onerror = () => {
+      clearTimeout(timeout)
+      adFailed.value = true
+      resolve()
+    }
 
     container.appendChild(iframe)
   })
@@ -116,6 +124,7 @@ const loadAdsterraScript = async () => {
     img.style.height = 'auto'
     img.style.display = 'block'
 
+    img.onerror = () => { adFailed.value = true }
     link.appendChild(img)
     adContainer.value.appendChild(link)
     adLoaded.value = true
@@ -151,7 +160,7 @@ onMounted(() => {
 
 <template>
   <div
-    v-if="adSlot.enabled && !adBlockDetected"
+    v-if="adSlot.enabled && !adBlockDetected && !adFailed"
     :class="[
       'relative rounded-lg border border-dashed border-surface-700 bg-surface-900/50 overflow-hidden',
       {
