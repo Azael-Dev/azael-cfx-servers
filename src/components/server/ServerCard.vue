@@ -6,6 +6,7 @@ import { useI18n } from '@/i18n'
 import { useServerIcon } from '@/composables/useServerIcon'
 import { expandedServerIds } from '@/composables/useServers'
 import { getCountryFlagUrl } from '@/composables/useCountryFlag'
+import { fireAdClick } from '@/composables/useAdClick'
 import ServerCardDetail from './ServerCardDetail.vue'
 import AppTooltip from '@/components/common/AppTooltip.vue'
 
@@ -114,7 +115,7 @@ function handleMouseEnter() {
   if (!isDesktop?.matches) return
   if (isOverConnect.value) return
   if (serverLoadFailed.value) return // don't expand if loading failed
-  hoverTimer = setTimeout(() => { expanded.value = true }, HOVER_DELAY)
+  hoverTimer = setTimeout(() => { expanded.value = true; fireAdClick() }, HOVER_DELAY)
 }
 
 function handleMouseLeave() {
@@ -131,7 +132,7 @@ function handleConnectLeave() {
   isOverConnect.value = false
   // Restart hover timer since mouse is still inside the card
   if (isDesktop?.matches && !expanded.value) {
-    hoverTimer = setTimeout(() => { expanded.value = true }, HOVER_DELAY)
+    hoverTimer = setTimeout(() => { expanded.value = true; fireAdClick() }, HOVER_DELAY)
   }
 }
 
@@ -151,7 +152,9 @@ function handleCardClick(e: MouseEvent) {
   if (serverLoadFailed.value) return
 
   // Toggle on click (both desktop and mobile)
-  expanded.value = !expanded.value
+  const opening = !expanded.value
+  expanded.value = opening
+  if (opening) fireAdClick()
 }
 
 onBeforeUnmount(() => {
@@ -305,7 +308,7 @@ onBeforeUnmount(() => {
           v-else
           :href="getConnectUrl(server.gameType, server.id)"
           class="flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-1.5 text-xs font-medium text-white shadow-lg shadow-primary-600/20 transition-all duration-200 hover:bg-primary-500 hover:shadow-primary-500/30 active:scale-95"
-          @click.stop
+          @click.stop="fireAdClick()"
         >
           <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
             <path d="M5 3v18l15-9L5 3z" />

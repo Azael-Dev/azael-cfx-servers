@@ -2,9 +2,9 @@ import type { SortOption } from '@/types'
 
 /** Ad slot enablement configuration */
 export const AD_ENABLED = {
-  HEADER: true,              // Enable header leaderboard
-  CONTENT: true,             // Enable inline content ads
-  SIDEBAR: true,             // Enable sidebar rectangles
+  HEADER: true,               // Enable header leaderboard
+  CONTENT: true,              // Enable inline content ads
+  SIDEBAR: true,              // Enable sidebar rectangles
   FOOTER: true,               // Enable footer banner
 } as const
 
@@ -12,13 +12,15 @@ export const AD_ENABLED = {
 export const ADSTERRA = {
   /** Adsterra ad unit keys per size */
   KEYS: {
-    LEADERBOARD: 'b8125a056372ff94d6b97e54f84d4f62',  // 728×90 (header & inline)
-    RECTANGLE: '9a262d58d722a366f3ae4b3b4ae408d4',     // 300×250 (sidebar)
+    LEADERBOARD: 'b8125a056372ff94d6b97e54f84d4f62',    // 728×90 (header & inline)
+    RECTANGLE: '9a262d58d722a366f3ae4b3b4ae408d4',      // 300×250 (sidebar)
+    SMARTLINK: '5008b480f3ab6313e8cacac0bec3db3a',      // Smartlink (click button / see server details)
   },
   /** Referral banner (footer) */
   REFERRAL: {
     URL: 'https://beta.publishers.adsterra.com/referral/cYffQLq5Qy',
     BANNER: 'https://landings-cdn.adsterratech.com/referralBanners/gif/720x90_adsterra_reff.gif',
+    SMARTLINK: 'https://www.effectivegatecpm.com/qhxdgj14u',
   },
   /** invoke.js base URL */
   INVOKE_BASE: 'https://www.highperformanceformat.com',
