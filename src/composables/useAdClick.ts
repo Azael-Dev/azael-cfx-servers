@@ -2,7 +2,7 @@ import { ADSTERRA } from '@/constants'
 
 // const AD_URL = 'https://www.effectivegatecpm.com/qhxdgj14u?key=5008b480f3ab6313e8cacac0bec3db3a'
 const AD_URL = `${ADSTERRA.REFERRAL.SMARTLINK}?key=${ADSTERRA.KEYS.SMARTLINK}`
-const COOLDOWN_MS = 2 * 60 * 1_000   // 2 minutes between ad opens
+const COOLDOWN_MS = 5 * 60 * 1_000   // 5 minutes between ad opens
 const STORAGE_KEY = '__cfx_adclick_ts'
 
 export function fireAdClick(): void {
