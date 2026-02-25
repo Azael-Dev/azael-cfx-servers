@@ -32,8 +32,8 @@ export function useServerIcon(endpoint: string, fallbackBanner: string, initialU
     const loading = ref(false)
     const loadFailed = ref(false)
     const isPrivate = ref(false)
-    /** Connect is disabled by default until data is successfully loaded */
-    const connectEnabled = ref(false)
+    /** Connect is enabled by default; disabled only when server is private */
+    const connectEnabled = ref(true)
 
     /** Check cache first */
     const cached = iconCache.get(endpoint)
@@ -44,7 +44,7 @@ export function useServerIcon(endpoint: string, fallbackBanner: string, initialU
         burstPower.value = cached.burstPower
         loadFailed.value = cached.loadFailed
         isPrivate.value = cached.isPrivate
-        connectEnabled.value = !cached.loadFailed && !cached.isPrivate
+        connectEnabled.value = !cached.isPrivate
     }
 
     /** Intersection Observer ref — set this on the card root element */
@@ -74,7 +74,8 @@ export function useServerIcon(endpoint: string, fallbackBanner: string, initialU
         const server = await fetchSingleServer(endpoint)
         if (!server) {
             loadFailed.value = true
-            connectEnabled.value = false
+            // keep connect enabled unless we know the server is private
+            connectEnabled.value = true
             iconCache.set(endpoint, { iconUrl: '', bannerUrl: fallbackBanner, upvotePower: initialUpvotePower, burstPower: initialBurstPower, loadFailed: true, isPrivate: false })
             return
         }
@@ -117,7 +118,8 @@ export function useServerIcon(endpoint: string, fallbackBanner: string, initialU
         } catch {
         // silently fail — fallback SVG will show
         loadFailed.value = true
-        connectEnabled.value = false
+        // keep connect enabled unless private flag is known
+        connectEnabled.value = true
         iconCache.set(endpoint, { iconUrl: '', bannerUrl: fallbackBanner, upvotePower: initialUpvotePower, burstPower: initialBurstPower, loadFailed: true, isPrivate: false })
         } finally {
         loading.value = false
