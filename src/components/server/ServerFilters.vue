@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import type { FilterState, SortField, SortOrder } from '@/types'
 import type { TranslationSchema } from '@/i18n/types'
 import type { DynamicLocaleOption } from '@/composables/useServers'
@@ -16,6 +16,7 @@ function getSortLabel(labelKey: string): string {
 /** Locale dropdown open state */
 const localeOpen = ref(false)
 const localeDropdownRef = ref<HTMLElement | null>(null)
+const localeListRef = ref<HTMLElement | null>(null)
 
 /** Currently selected locale option */
 const selectedLocale = computed(() => {
@@ -33,6 +34,18 @@ function selectLocale(code: string) {
 function toggleLocaleDropdown() {
   localeOpen.value = !localeOpen.value
 }
+
+/** Auto-scroll to selected locale when dropdown opens */
+watch(localeOpen, async (isOpen) => {
+  if (!isOpen) return
+  await nextTick()
+  const list = localeListRef.value
+  if (!list) return
+  const selected = list.querySelector('[data-selected="true"]') as HTMLElement | null
+  if (selected) {
+    selected.scrollIntoView({ block: 'center' })
+  }
+})
 
 /** Sort dropdown open state */
 const sortOpen = ref(false)
@@ -128,11 +141,13 @@ function handleHidePrivateChange(event: Event) {
       >
         <ul
           v-if="localeOpen"
+          ref="localeListRef"
           class="absolute left-0 z-50 mt-1 max-h-72 w-56 overflow-auto rounded-lg border border-surface-700 bg-surface-900 py-1 shadow-xl shadow-black/30"
         >
           <!-- "All" option -->
           <li
             @click="selectLocale('')"
+            :data-selected="props.filters.locale === ''"
             :class="[
               'flex cursor-pointer items-center gap-2.5 px-3 py-2 text-sm transition-colors hover:bg-surface-800',
               props.filters.locale === '' ? 'bg-primary-600/15 text-primary-400' : 'text-gray-300',
@@ -149,6 +164,7 @@ function handleHidePrivateChange(event: Event) {
             v-for="opt in props.localeOptions"
             :key="opt.code"
             @click="selectLocale(opt.code)"
+            :data-selected="opt.code === props.filters.locale"
             :class="[
               'flex cursor-pointer items-center gap-2.5 px-3 py-2 text-sm transition-colors hover:bg-surface-800',
               opt.code === props.filters.locale ? 'bg-primary-600/15 text-primary-400' : 'text-gray-300',

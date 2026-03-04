@@ -1,11 +1,8 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 import type { AdSlot } from '@/types'
 import { adBlockDetected } from '@/composables/useAdBlock'
 import { ADSTERRA } from '@/constants'
-import { useI18n } from '@/i18n'
-
-const { t, tt } = useI18n()
 
 const props = defineProps<{
   adSlot: AdSlot
@@ -71,28 +68,6 @@ const loadAd = (container: HTMLElement, key: string, width: number, height: numb
     container.appendChild(iframe)
   })
 }
-
-/** Localized label for the ad position */
-const positionLabel = computed(() => {
-  switch (props.adSlot.position) {
-    case 'header':  return t.value.adLabelHeader
-    case 'inline':  return t.value.adLabelInline
-    case 'sidebar': return t.value.adLabelSidebar
-    case 'footer':  return t.value.adLabelFooter
-    default:        return t.value.adLabelHeader
-  }
-})
-
-/** Human-readable size string (e.g. "728 × 90") */
-const sizeLabel = computed(() => {
-  switch (props.adSlot.size) {
-    case 'leaderboard': return tt('adSizeInfo', { width: 728, height: 90 })
-    case 'rectangle':   return tt('adSizeInfo', { width: 300, height: 250 })
-    case 'banner':      return tt('adSizeInfo', { width: 720, height: 90 })
-    case 'skyscraper':  return tt('adSizeInfo', { width: 160, height: 600 })
-    default:            return ''
-  }
-})
 
 /**
  * Load Adsterra ad into the container.
@@ -173,13 +148,20 @@ onMounted(() => {
       }
     ]"
   >
-    <!-- Placeholder text (shown until ad loads) -->
+    <!-- Loading skeleton (shown until ad loads) -->
     <div
       v-if="!adLoaded"
-      class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none select-none z-0"
+      class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none select-none z-0 overflow-hidden"
     >
-      <p class="text-base font-medium text-gray-600">{{ positionLabel }}</p>
-      <p class="text-sm mt-0.5 text-gray-700">{{ sizeLabel }}</p>
+      <!-- Skeleton content lines (matching project-wide skeleton style) -->
+      <div class="relative z-10 flex flex-col items-center gap-2">
+        <div class="h-3 w-24 rounded bg-surface-800 relative overflow-hidden">
+          <div class="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-surface-600/40 to-transparent" />
+        </div>
+        <div class="h-2.5 w-16 rounded bg-surface-800 relative overflow-hidden">
+          <div class="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-surface-600/40 to-transparent" />
+        </div>
+      </div>
     </div>
 
     <!-- Adsterra Ad Container -->
@@ -189,3 +171,4 @@ onMounted(() => {
     ]" />
   </div>
 </template>
+
