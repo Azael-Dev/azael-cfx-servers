@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import AdBlockDetector from '@/components/common/AdBlockDetector.vue'
+import { defineAsyncComponent } from 'vue'
+const AdBlockDetector = defineAsyncComponent(() => import('@/components/common/AdBlockDetector.vue'))
 </script>
 
 <template>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, onBeforeUnmount } from 'vue'
+import { computed, ref, watch, onBeforeUnmount, defineAsyncComponent } from 'vue'
 import type { Server } from '@/types'
 import { renderHostname, formatNumber, getPlayerFillPercent, getConnectUrl, getServerGradient, getCountryCode } from '@/utils/helpers'
 import { useI18n } from '@/i18n'
@@ -7,7 +7,7 @@ import { useServerIcon } from '@/composables/useServerIcon'
 import { expandedServerIds } from '@/composables/useServers'
 import { getCountryFlagUrl } from '@/composables/useCountryFlag'
 import { fireAdClick } from '@/composables/useAdClick'
-import ServerCardDetail from './ServerCardDetail.vue'
+const ServerCardDetail = defineAsyncComponent(() => import('./ServerCardDetail.vue'))
 import AppTooltip from '@/components/common/AppTooltip.vue'
 
 const { t } = useI18n()
@@ -70,7 +70,6 @@ const handleIconError = () => { iconError.value = true }
 const bannerLoaded = ref(false)
 
 // Watch bannerUrl and preload when it changes
-import { watch } from 'vue'
 watch(bannerUrl, (url) => {
   if (!url) return
   bannerLoaded.value = false

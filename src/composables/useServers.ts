@@ -137,48 +137,35 @@ const dynamicLocaleOptions = computed<DynamicLocaleOption[]>(() => {
 
 /** Filtered and sorted server list */
 const filteredServers = computed(() => {
-  let result = [...servers.value]
+  const f = filters.value
+  const filterRegion = f.locale ? f.locale.toUpperCase() : ''
+  const searchQuery = f.search ? f.search.toLowerCase() : ''
+  const sortBy = f.sortBy
+  const desc = f.sortOrder === 'desc'
 
-  // Filter by game type
-  result = result.filter(s => s.gameType === filters.value.gameType)
+  // Single-pass filter — avoids creating multiple intermediate arrays
+  const result = servers.value.filter(s => {
+    if (s.gameType !== f.gameType) return false
+    if (filterRegion && extractRegion(s.locale) !== filterRegion) return false
+    if (searchQuery) {
+      if (
+        !s.hostnameClean.toLowerCase().includes(searchQuery) &&
+        !s.projectName.toLowerCase().includes(searchQuery) &&
+        !s.gametype.toLowerCase().includes(searchQuery) &&
+        !s.mapname.toLowerCase().includes(searchQuery) &&
+        !s.endpoint.includes(searchQuery)
+      ) return false
+    }
+    if (f.hideEmpty && s.players === 0) return false
+    if (f.hideFull && s.players >= s.maxPlayers) return false
+    if (f.hidePrivate && privateServerIds.has(s.endpoint)) return false
+    return true
+  })
 
-  // Filter by locale (region-based: e.g. 'US' matches 'en-US', 'es-US', etc.)
-  if (filters.value.locale) {
-    const filterRegion = filters.value.locale.toUpperCase()
-    result = result.filter(s => extractRegion(s.locale) === filterRegion)
-  }
-
-  // Filter by search query
-  if (filters.value.search) {
-    const q = filters.value.search.toLowerCase()
-    result = result.filter(s =>
-      s.hostnameClean.toLowerCase().includes(q) ||
-      s.projectName.toLowerCase().includes(q) ||
-      s.gametype.toLowerCase().includes(q) ||
-      s.mapname.toLowerCase().includes(q) ||
-      s.endpoint.includes(q)
-    )
-  }
-
-  // Hide empty servers
-  if (filters.value.hideEmpty) {
-    result = result.filter(s => s.players > 0)
-  }
-
-  // Hide full servers
-  if (filters.value.hideFull) {
-    result = result.filter(s => s.players < s.maxPlayers)
-  }
-
-  // Hide private servers (private status comes from fetchSingleServer via useServerIcon)
-  if (filters.value.hidePrivate) {
-    result = result.filter(s => !privateServerIds.has(s.endpoint))
-  }
-
-  // Sort
+  // Sort the filtered result in-place (.filter always returns a new array)
   result.sort((a, b) => {
     let cmp = 0
-    switch (filters.value.sortBy) {
+    switch (sortBy) {
       case 'players':
         cmp = a.players - b.players
         break
@@ -192,7 +179,7 @@ const filteredServers = computed(() => {
         cmp = a.maxPlayers - b.maxPlayers
         break
     }
-    return filters.value.sortOrder === 'desc' ? -cmp : cmp
+    return desc ? -cmp : cmp
   })
 
   return result
