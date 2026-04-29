@@ -12,117 +12,129 @@ const iconCache = new Map<string, { iconUrl: string; bannerUrl: string; upvotePo
 export const privateServerIds = reactive(new Set<string>())
 
 /**
+ * Stagger delay per card index (ms) to spread out API requests and avoid rate limits.
+ * Each card waits `cardIndex * CARD_FETCH_STAGGER` ms before triggering its fetch.
+ * Cached cards skip the delay entirely.
+ */
+const CARD_FETCH_STAGGER = 150
+
+/**
  * Lazy-load server icon & banner via the single-server JSON API.
  *
- * The protobuf stream data does NOT provide accurate `iconVersion`,
- * `upvotePower`, `burstPower`, or `private` fields, so we fetch
- * `/api/servers/single/{endpoint}` for visible cards via IntersectionObserver.
- *
- * Optimisations applied:
+ * Rate-limit protections:
  *  - In-memory `iconCache` avoids redundant fetches when paginating back.
- *  - The API-level cache uses a longer `CACHE_DURATION` (5 min)
- *    and is preserved across background list refreshes, so cards that were
- *    already fetched will not re-trigger CORS-blocked requests.
+ *  - `cardIndex` stagger delay — cards fetch one-by-one with CARD_FETCH_STAGGER ms gap.
+ *  - `pageKey` reset — when the page changes, uncached cards re-enter skeleton state
+ *    and re-trigger their staggered fetch sequence.
+ *  - Concurrency queue + 429 backoff are handled at the api.ts layer.
  */
-export function useServerIcon(endpoint: string, fallbackBanner: string, initialUpvotePower = 0, initialBurstPower = 0) {
+export function useServerIcon(
+  endpoint: string,
+  fallbackBanner: string,
+  initialUpvotePower = 0,
+  initialBurstPower = 0,
+  cardIndex = 0,
+  pageKey = 0,
+) {
     const iconUrl = ref('')
     const bannerUrl = ref(fallbackBanner)
     const upvotePower = ref(initialUpvotePower)
     const burstPower = ref(initialBurstPower)
-    const loading = ref(false)
     const loadFailed = ref(false)
     const isPrivate = ref(false)
     /** Connect is enabled by default; disabled only when server is private */
     const connectEnabled = ref(true)
 
-    /** Check cache first */
-    const cached = iconCache.get(endpoint)
-    if (cached) {
-        iconUrl.value = cached.iconUrl
-        if (cached.bannerUrl) bannerUrl.value = cached.bannerUrl
-        upvotePower.value = cached.upvotePower
-        burstPower.value = cached.burstPower
-        loadFailed.value = cached.loadFailed
-        isPrivate.value = cached.isPrivate
-        connectEnabled.value = !cached.isPrivate
-    }
+    /**
+     * `cardReady` is false until the single-server fetch resolves (or cache hit).
+     * While false the card renders as a full skeleton row.
+     * Cached entries skip the skeleton entirely.
+     */
+    const cardReady = ref(false)
 
-    /** Intersection Observer ref — set this on the card root element */
-    const cardRef = ref<HTMLElement | null>(null)
-    let observer: IntersectionObserver | null = null
-    let fetched = false
-
-    async function fetchIcon() {
-        if (fetched || loading.value) return
-        fetched = true
-
-        // Already cached
-        if (iconCache.has(endpoint)) {
-        const c = iconCache.get(endpoint)!
+    /** Populate state from cache entry */
+    function applyCache(c: NonNullable<ReturnType<typeof iconCache.get>>) {
         iconUrl.value = c.iconUrl
         if (c.bannerUrl) bannerUrl.value = c.bannerUrl
         upvotePower.value = c.upvotePower
         burstPower.value = c.burstPower
         loadFailed.value = c.loadFailed
         isPrivate.value = c.isPrivate
-        connectEnabled.value = !c.loadFailed && !c.isPrivate
-        return
-        }
+        connectEnabled.value = !c.isPrivate
+        cardReady.value = true
+    }
 
-        loading.value = true
+    /** Check cache first — cached cards are immediately ready (no skeleton) */
+    const cached = iconCache.get(endpoint)
+    if (cached) applyCache(cached)
+
+    /** Intersection Observer ref — set this on the card root element */
+    const cardRef = ref<HTMLElement | null>(null)
+    let observer: IntersectionObserver | null = null
+    let fetched = false
+    let delayTimer: ReturnType<typeof setTimeout> | null = null
+
+    async function doFetch() {
+        if (fetched) return
+        fetched = true
+
+        // Re-check cache (may have been populated by another card while we waited)
+        const hit = iconCache.get(endpoint)
+        if (hit) { applyCache(hit); return }
+
         try {
-        const server = await fetchSingleServer(endpoint)
-        if (!server) {
+            const server = await fetchSingleServer(endpoint)
+            if (!server) {
+                loadFailed.value = true
+                connectEnabled.value = true
+                iconCache.set(endpoint, { iconUrl: '', bannerUrl: fallbackBanner, upvotePower: initialUpvotePower, burstPower: initialBurstPower, loadFailed: true, isPrivate: false })
+                return
+            }
+
+            const data = server.Data
+            const vars = data.vars || {}
+            const iv = data.iconVersion || parseInt(vars['iconVersion'] || '0', 10) || 0
+            const resolvedIcon = iv !== 0 ? API.SERVER_ICON(endpoint, iv) : ''
+            const resolvedBanner = vars['banner_detail'] || vars['banner_connecting'] || fallbackBanner
+            const resolvedUpvotePower = data.upvotePower || 0
+            const resolvedBurstPower = data.burstPower || 0
+            const resolvedIsPrivate = data.private || false
+
+            iconUrl.value = resolvedIcon
+            if (resolvedBanner) bannerUrl.value = resolvedBanner
+            upvotePower.value = resolvedUpvotePower
+            burstPower.value = resolvedBurstPower
+            isPrivate.value = resolvedIsPrivate
+            loadFailed.value = false
+            connectEnabled.value = !resolvedIsPrivate
+
+            if (resolvedIsPrivate) privateServerIds.add(endpoint)
+            else privateServerIds.delete(endpoint)
+
+            iconCache.set(endpoint, {
+                iconUrl: resolvedIcon,
+                bannerUrl: resolvedBanner,
+                upvotePower: resolvedUpvotePower,
+                burstPower: resolvedBurstPower,
+                loadFailed: false,
+                isPrivate: resolvedIsPrivate,
+            })
+        } catch {
             loadFailed.value = true
-            // keep connect enabled unless we know the server is private
             connectEnabled.value = true
             iconCache.set(endpoint, { iconUrl: '', bannerUrl: fallbackBanner, upvotePower: initialUpvotePower, burstPower: initialBurstPower, loadFailed: true, isPrivate: false })
-            return
-        }
-
-        const data = server.Data
-        const vars = data.vars || {}
-        const iv = data.iconVersion || parseInt(vars['iconVersion'] || '0', 10) || 0
-        const resolvedIcon = iv != 0 ? API.SERVER_ICON(endpoint, iv) : ''
-        const resolvedBanner = vars['banner_detail']
-            || vars['banner_connecting']
-            || fallbackBanner
-        const resolvedUpvotePower = data.upvotePower || 0
-        const resolvedBurstPower = data.burstPower || 0
-        const resolvedIsPrivate = data.private || false
-
-        iconUrl.value = resolvedIcon
-        if (resolvedBanner) bannerUrl.value = resolvedBanner
-        upvotePower.value = resolvedUpvotePower
-        burstPower.value = resolvedBurstPower
-        isPrivate.value = resolvedIsPrivate
-        loadFailed.value = false
-        connectEnabled.value = !resolvedIsPrivate
-
-        // Track private servers globally for reactive filtering
-        if (resolvedIsPrivate) {
-          privateServerIds.add(endpoint)
-        } else {
-          privateServerIds.delete(endpoint)
-        }
-
-        // Cache for reuse (e.g. when paginating back)
-        iconCache.set(endpoint, {
-            iconUrl: resolvedIcon,
-            bannerUrl: resolvedBanner,
-            upvotePower: resolvedUpvotePower,
-            burstPower: resolvedBurstPower,
-            loadFailed: false,
-            isPrivate: resolvedIsPrivate,
-        })
-        } catch {
-        // silently fail — fallback SVG will show
-        loadFailed.value = true
-        // keep connect enabled unless private flag is known
-        connectEnabled.value = true
-        iconCache.set(endpoint, { iconUrl: '', bannerUrl: fallbackBanner, upvotePower: initialUpvotePower, burstPower: initialBurstPower, loadFailed: true, isPrivate: false })
         } finally {
-        loading.value = false
+            cardReady.value = true
+        }
+    }
+
+    function scheduleStaggeredFetch() {
+        if (delayTimer) { clearTimeout(delayTimer); delayTimer = null }
+        const delay = iconCache.has(endpoint) ? 0 : cardIndex * CARD_FETCH_STAGGER
+        if (delay === 0) {
+            doFetch()
+        } else {
+            delayTimer = setTimeout(doFetch, delay)
         }
     }
 
@@ -131,19 +143,33 @@ export function useServerIcon(endpoint: string, fallbackBanner: string, initialU
         if (!cardRef.value || observer) return
 
         observer = new IntersectionObserver(
-        (entries) => {
-            if (entries[0]?.isIntersecting) {
-            fetchIcon()
-            // Stop observing once triggered
-            observer?.disconnect()
-            observer = null
-            }
-        },
-        { rootMargin: '200px' } // pre-fetch a bit before visible
+            (entries) => {
+                if (entries[0]?.isIntersecting) {
+                    scheduleStaggeredFetch()
+                    observer?.disconnect()
+                    observer = null
+                }
+            },
+            { rootMargin: '50px' },
         )
 
         observer.observe(cardRef.value)
     }
+
+    // Re-initialise when pageKey changes (page navigation)
+    watch(() => pageKey, () => {
+        // Reset fetch state so the new page's cards fetch fresh
+        fetched = false
+        if (!iconCache.has(endpoint)) {
+            cardReady.value = false
+            iconUrl.value = ''
+            loadFailed.value = false
+        }
+        // Restart observer for the new card position
+        observer?.disconnect()
+        observer = null
+        if (cardRef.value) startObserving()
+    })
 
     // Watch for cardRef being set (template ref)
     watch(cardRef, (el) => {
@@ -153,6 +179,7 @@ export function useServerIcon(endpoint: string, fallbackBanner: string, initialU
     onUnmounted(() => {
         observer?.disconnect()
         observer = null
+        if (delayTimer) { clearTimeout(delayTimer); delayTimer = null }
     })
 
     return {
@@ -161,7 +188,7 @@ export function useServerIcon(endpoint: string, fallbackBanner: string, initialU
         bannerUrl,
         upvotePower,
         burstPower,
-        iconLoading: loading,
+        cardReady,
         loadFailed,
         isPrivate,
         connectEnabled,

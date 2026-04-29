@@ -3,7 +3,7 @@ import type { Server, AdSlot } from '@/types'
 import ServerCard from './ServerCard.vue'
 import AdBanner from '@/components/layout/AdBanner.vue'
 import { useI18n } from '@/i18n'
-import { AD_ENABLED } from '@/constants'
+import { AD_ENABLED, INLINE_AD_INTERVAL } from '@/constants'
 
 const { t } = useI18n()
 
@@ -12,10 +12,11 @@ const props = defineProps<{
   loading: boolean
   currentPage: number
   perPage: number
+  pageKey: number
 }>()
 
 /** Inline ad config - show ads every N servers */
-const inlineAdInterval = 10
+const inlineAdInterval = INLINE_AD_INTERVAL
 
 const inlineAdSlot: AdSlot = {
   id: 'inline-server-list',
@@ -87,6 +88,8 @@ const inlineAdSlot: AdSlot = {
 
         <ServerCard
           :server="server"
+          :card-index="index"
+          :page-key="props.pageKey"
         />
       </template>
     </template>

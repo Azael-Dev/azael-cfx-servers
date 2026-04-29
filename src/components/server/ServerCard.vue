@@ -14,6 +14,8 @@ const { t } = useI18n()
 
 const props = defineProps<{
   server: Server
+  cardIndex?: number
+  pageKey?: number
 }>()
 
 const playerPercent = computed(() =>
@@ -54,11 +56,13 @@ const _serverIcon = useServerIcon(
   props.server.bannerUrl,
   props.server.upvotePower,
   props.server.burstPower,
+  props.cardIndex ?? 0,
+  props.pageKey ?? 0,
 )
 const iconUrl = _serverIcon.iconUrl
 const bannerUrl = _serverIcon.bannerUrl
 const upvotePower = _serverIcon.upvotePower
-const iconLoading = _serverIcon.iconLoading
+const cardReady = _serverIcon.cardReady
 const serverLoadFailed = _serverIcon.loadFailed
 const connectEnabled = _serverIcon.connectEnabled
 
@@ -113,6 +117,7 @@ const connectDisabled = computed(() => !connectEnabled.value)
 function handleMouseEnter() {
   if (!isDesktop?.matches) return
   if (isOverConnect.value) return
+  if (!cardReady.value) return // don't expand while loading
   if (serverLoadFailed.value) return // don't expand if loading failed
   hoverTimer = setTimeout(() => { expanded.value = true; fireAdClick() }, HOVER_DELAY)
 }
@@ -147,7 +152,8 @@ function handleCardClick(e: MouseEvent) {
   const target = e.target as HTMLElement
   if (target.closest('a, button')) return
 
-  // Don't expand if loading failed
+  // Don't expand while loading or if load failed
+  if (!cardReady.value) return
   if (serverLoadFailed.value) return
 
   // Toggle on click (both desktop and mobile)
@@ -162,7 +168,44 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
+  <!-- Full-card skeleton — shown while single-server data is being fetched -->
   <div
+    v-if="!cardReady"
+    :ref="(el) => { _serverIcon.cardRef.value = el as HTMLElement | null }"
+    class="rounded-xl border border-surface-800 bg-surface-900/60 px-4 py-3"
+  >
+    <div class="flex items-center gap-3">
+      <div class="h-10 w-10 shrink-0 rounded-lg bg-surface-800 animate-pulse"></div>
+      <div class="min-w-0 flex-1 space-y-1">
+        <div class="h-4 rounded bg-surface-800 animate-pulse" :style="{ width: `${55 + (cardIndex ?? 0) % 3 * 15}%` }"></div>
+        <div class="h-3 rounded bg-surface-800/60 animate-pulse" :style="{ width: `${30 + (cardIndex ?? 0) % 4 * 10}%`, maxWidth: '260px' }"></div>
+      </div>
+      <div class="hidden md:flex shrink-0 items-center gap-1.5">
+        <div class="h-5 w-16 rounded-md bg-surface-800 animate-pulse"></div>
+        <div class="h-5 w-16 rounded-md bg-surface-800 animate-pulse"></div>
+        <div class="h-5 w-8 rounded-md bg-surface-800 animate-pulse"></div>
+        <div class="h-4 w-5 rounded-xs bg-surface-800 animate-pulse"></div>
+      </div>
+      <div class="shrink-0 text-right space-y-1">
+        <div class="flex items-center gap-1 justify-end">
+          <div class="h-4 w-4 rounded bg-surface-800 animate-pulse"></div>
+          <div class="h-4 w-10 rounded bg-surface-800 animate-pulse"></div>
+          <div class="h-3 w-6 rounded bg-surface-800/60 animate-pulse"></div>
+        </div>
+        <div class="h-1 w-full rounded-full bg-surface-800 animate-pulse"></div>
+      </div>
+      <div class="hidden md:flex shrink-0">
+        <div class="h-[30px] w-[72px] rounded-lg bg-surface-800 animate-pulse"></div>
+      </div>
+      <div class="shrink-0 ml-0.5 md:hidden">
+        <div class="h-4 w-4 rounded bg-surface-800/60 animate-pulse"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loaded card -->
+  <div
+    v-else
     :ref="(el) => { _serverIcon.cardRef.value = el as HTMLElement | null }"
     class="group relative overflow-hidden rounded-xl border border-surface-800 bg-surface-900/60 px-4 py-3 transition-all duration-200 hover:border-surface-700 hover:bg-surface-900 hover:shadow-xl hover:shadow-black/20 cursor-pointer select-none"
     @mouseenter="handleMouseEnter"
@@ -186,8 +229,8 @@ onBeforeUnmount(() => {
       <!-- Server Icon -->
       <div class="flex-shrink-0">
         <div class="h-10 w-10 rounded-lg flex items-center justify-center overflow-hidden"
-             :style="{ background: (!iconUrl || iconError) && !iconLoading ? serverGradient : undefined }"
-             :class="{ 'bg-surface-800': (iconUrl && !iconError) || iconLoading }"
+             :style="{ background: (!iconUrl || iconError) ? serverGradient : undefined }"
+             :class="{ 'bg-surface-800': iconUrl && !iconError }"
         >
           <img
             v-if="iconUrl && !iconError"
@@ -197,10 +240,6 @@ onBeforeUnmount(() => {
             loading="lazy"
             @error="handleIconError"
           />
-          <!-- Loading skeleton -->
-          <div v-else-if="iconLoading" class="h-full w-full bg-surface-700 relative overflow-hidden">
-            <div class="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-surface-600/40 to-transparent"></div>
-          </div>
         </div>
       </div>
 

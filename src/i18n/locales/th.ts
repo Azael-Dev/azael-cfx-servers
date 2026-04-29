@@ -97,11 +97,6 @@ const th: TranslationSchema = {
   redmOfficial: 'เว็บไซต์ทางการ RedM',
   cfxForum: 'ฟอรั่ม Cfx.re',
 
-  // Cfx.re Feed
-  cfxFeed: 'ฟีดข่าว',
-  cfxFeedEmpty: 'ไม่มีโพสต์',
-  cfxFeedError: 'ไม่สามารถโหลดฟีดได้',
-
   // Ad slot labels
   adLabelHeader: 'โฆษณาส่วนหัว',
   adLabelInline: 'โฆษณาในเนื้อหา',

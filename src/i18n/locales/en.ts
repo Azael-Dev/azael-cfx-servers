@@ -97,11 +97,6 @@ const en: TranslationSchema = {
   redmOfficial: 'RedM Official',
   cfxForum: 'Cfx.re Forum',
 
-  // Cfx.re Feed
-  cfxFeed: 'News Feed',
-  cfxFeedEmpty: 'No posts available',
-  cfxFeedError: 'Failed to load feed',
-
   // Ad slot labels
   adLabelHeader: 'Header Ad',
   adLabelInline: 'Content Ad',

@@ -37,10 +37,8 @@ export const SORT_OPTIONS: SortOption[] = [
 ]
 
 /** Default items per page */
-export const DEFAULT_PER_PAGE = 20
-
-/** Default tweet limit for feed display */
-export const DEFAULT_TWEET_LIMIT = 3
+export const DEFAULT_PER_PAGE = 12
+export const INLINE_AD_INTERVAL = 6
 
 /** API base URLs */
 export const API = {
@@ -60,8 +58,6 @@ export const API = {
   /** Server icon */
   SERVER_ICON: (endpoint: string, iconVersion: number) =>
     `https://servers-frontend.fivem.net/api/servers/icon/${endpoint}/${iconVersion}.png`,
-  /** Cfx.re tweets feed */
-  TWEETS: 'https://runtime.fivem.net/tweets.json',
   /** Geolocation API */
   GEOLOCATION: 'https://free.freeipapi.com/api/json',
 } as const

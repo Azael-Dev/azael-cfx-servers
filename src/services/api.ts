@@ -1,4 +1,4 @@
-import { API, CACHE_DURATION } from '@/constants'
+import { API, CACHE_DURATION, DEFAULT_PER_PAGE } from '@/constants'
 import type { CfxServer, CfxServerData, PlayerCounts } from '@/types'
 
 // ---------------------------------------------------------------------------
@@ -333,53 +333,130 @@ async function parseStreamResponse(
   return servers
 }
 
+// ---------------------------------------------------------------------------
+// Single-server request throttle
+// ---------------------------------------------------------------------------
+
+/** Max concurrent /api/servers/single/ requests to avoid rate limiting */
+const SINGLE_SERVER_MAX_CONCURRENT = Math.round(DEFAULT_PER_PAGE / 2)
+
+let singleServerActive = 0
+const singleServerQueue: Array<() => void> = []
+
+/** De-duplicate in-flight requests for the same endpoint */
+const singleServerInflight = new Map<string, Promise<CfxServer | null>>()
+
+function drainSingleServerQueue(): void {
+  while (singleServerActive < SINGLE_SERVER_MAX_CONCURRENT && singleServerQueue.length > 0) {
+    const next = singleServerQueue.shift()!
+    next()
+  }
+}
+
+function withSingleServerLimit<T>(fn: () => Promise<T>): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const run = () => {
+      singleServerActive++
+      fn()
+        .then(resolve, reject)
+        .finally(() => {
+          singleServerActive--
+          drainSingleServerQueue()
+        })
+    }
+    if (singleServerActive < SINGLE_SERVER_MAX_CONCURRENT) {
+      run()
+    } else {
+      singleServerQueue.push(run)
+    }
+  })
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+/**
+ * Fetch a URL with automatic 429 retry using exponential backoff.
+ * Returns null if all attempts are exhausted or a non-retryable error occurs.
+ */
+async function fetchWithBackoff(url: string): Promise<Response | null> {
+  const MAX_RETRIES = 2
+  let backoff = 1500
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const res = await fetch(url)
+      if (res.status === 429 && attempt < MAX_RETRIES) {
+        const retryAfter = parseInt(res.headers.get('Retry-After') ?? '0', 10)
+        await sleep(retryAfter > 0 ? retryAfter * 1000 : backoff)
+        backoff *= 2
+        continue
+      }
+      return res
+    } catch {
+      if (attempt < MAX_RETRIES) {
+        await sleep(backoff)
+        backoff *= 2
+        continue
+      }
+      return null
+    }
+  }
+  return null
+}
+
 /**
  * Fetch single server details (resources, players, full vars).
- * Called ONLY when a user explicitly clicks to view server details.
  *
- * Uses a longer cache duration (CACHE_DURATION) to reduce
- * repeated CORS-blocked requests. The detail cache is preserved
- * across background refreshes — only cleared on explicit full cache clear.
+ * Rate-limit protections applied:
+ *  - In-memory cache (CACHE_DURATION) — avoids re-fetching known endpoints.
+ *  - In-flight deduplication — concurrent calls for the same endpoint share one request.
+ *  - Concurrency queue (max 3) — serialises burst calls (e.g. page load with 20 cards).
+ *  - 429 retry with exponential backoff — backs off and retries when rate-limited.
  *
  * Tries the direct endpoint first; falls back to CORS proxy if blocked.
  */
-export async function fetchSingleServer(address: string): Promise<CfxServer | null> {
+export function fetchSingleServer(address: string): Promise<CfxServer | null> {
   const cacheKey = `server-${address}`
   const entry = cache.get(cacheKey) as CacheEntry<CfxServer> | undefined
   if (entry && Date.now() - entry.timestamp < CACHE_DURATION) {
-    return entry.data
+    return Promise.resolve(entry.data)
   }
 
+  // Return the existing promise if an identical request is already in-flight
+  const inflight = singleServerInflight.get(address)
+  if (inflight) return inflight
+
+  const promise = withSingleServerLimit(() => doFetchSingleServer(address))
+  singleServerInflight.set(address, promise)
+  promise.finally(() => singleServerInflight.delete(address))
+  return promise
+}
+
+async function doFetchSingleServer(address: string): Promise<CfxServer | null> {
+  const cacheKey = `server-${address}`
   const directUrl = `${API.SINGLE_SERVER}/${address}`
   const proxyUrl = `${API.CORS_PROXY}/?${encodeURIComponent(directUrl)}`
 
-  // Try direct first
-  try {
-    const response = await fetch(directUrl)
-    
-    if (response.ok) {
-      const data = await response.json()
-      const server: CfxServer = {
-        EndPoint: data.EndPoint || address,
-        Data: data.Data || data,
-      }
+  // Try direct first (with 429 backoff)
+  const directRes = await fetchWithBackoff(directUrl)
+  if (directRes?.ok) {
+    try {
+      const data = await directRes.json()
+      const server: CfxServer = { EndPoint: data.EndPoint || address, Data: data.Data || data }
       setCache(cacheKey, server)
       return server
+    } catch {
+      // malformed JSON — fall through to proxy
     }
-  } catch {
-    // ignore and try proxy
   }
 
-  // Fallback: CORS proxy
+  // Fallback: CORS proxy (with 429 backoff)
+  const proxyRes = await fetchWithBackoff(proxyUrl)
+  if (!proxyRes?.ok) return null
   try {
-    const response = await fetch(proxyUrl)
-    if (!response.ok) return null
-    
-    const data = await response.json()
-    const server: CfxServer = {
-      EndPoint: data.EndPoint || address,
-      Data: data.Data || data,
-    }
+    const data = await proxyRes.json()
+    const server: CfxServer = { EndPoint: data.EndPoint || address, Data: data.Data || data }
     setCache(cacheKey, server)
     return server
   } catch {

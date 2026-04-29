@@ -19,7 +19,6 @@ import StatsBar from '@/components/common/StatsBar.vue'
 import Pagination from '@/components/common/Pagination.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import { defineAsyncComponent } from 'vue'
-const CfxFeed = defineAsyncComponent(() => import('@/components/sidebar/CfxFeed.vue'))
 
 const {
   loading,
@@ -145,6 +144,7 @@ watch(stats, (newStats) => {
                 :loading="false"
                 :current-page="filters.currentPage"
                 :per-page="filters.perPage"
+                :page-key="filters.currentPage"
               />
 
               <Pagination
@@ -185,13 +185,8 @@ watch(stats, (newStats) => {
               </div>
             </div>
 
-            <!-- Sidebar Ad -->
+            <!-- Sidebar Ads -->
             <AdBanner :ad-slot="sidebarAd" />
-
-            <!-- Cfx.re Feed -->
-            <CfxFeed />
-
-            <!-- Sidebar Ad -->
             <AdBanner :ad-slot="sidebarAd2" />
             <AdBanner :ad-slot="sidebarAd3" />
           </aside>
