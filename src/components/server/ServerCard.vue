@@ -72,8 +72,6 @@ const handleIconError = () => { iconError.value = true }
 
 /** Banner preload — only show after confirmed load */
 const bannerLoaded = ref(false)
-
-// Watch bannerUrl and preload when it changes
 watch(bannerUrl, (url) => {
   if (!url) return
   bannerLoaded.value = false
@@ -171,7 +169,6 @@ onBeforeUnmount(() => {
   <!-- Full-card skeleton — shown while single-server data is being fetched -->
   <div
     v-if="!cardReady"
-    :ref="(el) => { _serverIcon.cardRef.value = el as HTMLElement | null }"
     class="rounded-xl border border-surface-800 bg-surface-900/60 px-4 py-3"
   >
     <div class="flex items-center gap-3">
@@ -206,7 +203,6 @@ onBeforeUnmount(() => {
   <!-- Loaded card -->
   <div
     v-else
-    :ref="(el) => { _serverIcon.cardRef.value = el as HTMLElement | null }"
     class="group relative overflow-hidden rounded-xl border border-surface-800 bg-surface-900/60 px-4 py-3 transition-all duration-200 hover:border-surface-700 hover:bg-surface-900 hover:shadow-xl hover:shadow-black/20 cursor-pointer select-none"
     @mouseenter="handleMouseEnter"
     @mouseleave="handleMouseLeave"

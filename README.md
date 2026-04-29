@@ -6,8 +6,7 @@ A modern web application to browse FiveM and RedM server lists with search, filt
 
 - **Vite** + **Vue 3** + **TypeScript** — Frontend framework
 - **Tailwind CSS 4.1** — Utility-first CSS (Vite plugin)
-- **Vue Router 4** — Client-side routing
-- **@msgpack/msgpack** — Decode FiveM streaming server data
+- **Vue Router 4** — Client-side routing with route-level code splitting
 - **Bun** — JavaScript runtime & package manager
 - **GitHub Pages** — Static hosting via GitHub Actions
 
@@ -24,6 +23,8 @@ A modern web application to browse FiveM and RedM server lists with search, filt
 - 📢 Adsterra ad integration (leaderboard, rectangle, banner)
 - 🛡️ Ad blocker detection with user notification
 - ♻️ Auto-refresh data every 60 seconds
+- ⚡ Queue-based per-card detail loading with full skeleton UI (no viewport gating)
+- 🔒 Rate-limit protection: max 3 concurrent requests, in-flight deduplication, 429 exponential backoff
 - 🧩 Extensible architecture for future growth
 
 ## Getting Started
@@ -41,6 +42,20 @@ bun run build
 # Preview production build
 bun run preview
 ```
+
+## Performance & Configuration
+
+Key constants in `src/constants/index.ts`:
+
+| Constant | Default | Description |
+|---|---|---|
+| `DEFAULT_PER_PAGE` | `12` | Cards shown per page |
+| `SINGLE_SERVER_MAX_CONCURRENT` | `3` | Max simultaneous detail-API requests |
+| `INLINE_AD_INTERVAL` | `6` | Show inline ad every N cards |
+| `CACHE_DURATION` | `5 min` | In-memory server detail cache TTL |
+| `REFRESH_INTERVAL` | `60 s` | Server list auto-refresh interval |
+
+**Loading strategy:** On each page navigation, all cards on the new page enter a concurrency queue immediately. Each card is staggered by `cardIndex × 100 ms` to smooth out insertions. Requests beyond the concurrency limit wait in queue. Cards display a skeleton row until their fetch resolves. Previously-fetched endpoints are served from the in-memory cache with zero network cost.
 
 ## Deployment
 
@@ -101,7 +116,7 @@ Ads are powered by **Adsterra** and managed centrally through `AdBanner.vue`. Cu
 | Slot | Size | Location | Type |
 |---|---|---|---|
 | `header-banner` | 728×90 | Top of page | Adsterra iframe |
-| `inline-server-list` | 728×90 | Between server cards (every 10) | Adsterra iframe |
+| `inline-server-list` | 728×90 | Between server cards (every 5) | Adsterra iframe |
 | `sidebar-rect` | 300×250 | Desktop sidebar | Adsterra iframe |
 | `footer-banner` | 720×90 | Footer | Static banner |
 

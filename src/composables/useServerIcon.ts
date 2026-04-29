@@ -1,4 +1,4 @@
-import { ref, reactive, watch, onUnmounted } from 'vue'
+import { ref, reactive, watch, onMounted, onUnmounted } from 'vue'
 import { fetchSingleServer } from '@/services/api'
 import { API } from '@/constants'
 
@@ -12,21 +12,24 @@ const iconCache = new Map<string, { iconUrl: string; bannerUrl: string; upvotePo
 export const privateServerIds = reactive(new Set<string>())
 
 /**
- * Stagger delay per card index (ms) to spread out API requests and avoid rate limits.
- * Each card waits `cardIndex * CARD_FETCH_STAGGER` ms before triggering its fetch.
- * Cached cards skip the delay entirely.
+ * Stagger delay per card index (ms) to spread queue insertions and avoid
+ * saturating the concurrency queue all at once on page load.
+ * Card 0 = 0 ms, card 1 = 100 ms, ..., card 11 = 1100 ms.
+ * Cached cards always skip the delay.
  */
-const CARD_FETCH_STAGGER = 150
+const CARD_FETCH_STAGGER = 100
 
 /**
  * Lazy-load server icon & banner via the single-server JSON API.
  *
- * Rate-limit protections:
- *  - In-memory `iconCache` avoids redundant fetches when paginating back.
- *  - `cardIndex` stagger delay — cards fetch one-by-one with CARD_FETCH_STAGGER ms gap.
- *  - `pageKey` reset — when the page changes, uncached cards re-enter skeleton state
- *    and re-trigger their staggered fetch sequence.
- *  - Concurrency queue + 429 backoff are handled at the api.ts layer.
+ * Loading strategy:
+ *  - All cards on the current page are queued immediately on mount (no viewport gating).
+ *  - Requests are staggered by `cardIndex × CARD_FETCH_STAGGER` ms to smooth
+ *    queue insertion, then processed `SINGLE_SERVER_MAX_CONCURRENT` at a time.
+ *  - In-memory `iconCache` skips the network for endpoints already fetched.
+ *  - `pageKey` reset: when the page changes, uncached cards re-enter skeleton
+ *    state and re-queue their fetch for the new page's cards.
+ *  - Concurrency limit + 429 backoff are handled at the api.ts layer.
  */
 export function useServerIcon(
   endpoint: string,
@@ -42,17 +45,14 @@ export function useServerIcon(
     const burstPower = ref(initialBurstPower)
     const loadFailed = ref(false)
     const isPrivate = ref(false)
-    /** Connect is enabled by default; disabled only when server is private */
     const connectEnabled = ref(true)
 
     /**
      * `cardReady` is false until the single-server fetch resolves (or cache hit).
      * While false the card renders as a full skeleton row.
-     * Cached entries skip the skeleton entirely.
      */
     const cardReady = ref(false)
 
-    /** Populate state from cache entry */
     function applyCache(c: NonNullable<ReturnType<typeof iconCache.get>>) {
         iconUrl.value = c.iconUrl
         if (c.bannerUrl) bannerUrl.value = c.bannerUrl
@@ -64,13 +64,10 @@ export function useServerIcon(
         cardReady.value = true
     }
 
-    /** Check cache first — cached cards are immediately ready (no skeleton) */
+    // Cached cards are immediately ready — no skeleton shown
     const cached = iconCache.get(endpoint)
     if (cached) applyCache(cached)
 
-    /** Intersection Observer ref — set this on the card root element */
-    const cardRef = ref<HTMLElement | null>(null)
-    let observer: IntersectionObserver | null = null
     let fetched = false
     let delayTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -78,7 +75,7 @@ export function useServerIcon(
         if (fetched) return
         fetched = true
 
-        // Re-check cache (may have been populated by another card while we waited)
+        // Re-check cache (may have been populated by another card while waiting)
         const hit = iconCache.get(endpoint)
         if (hit) { applyCache(hit); return }
 
@@ -130,6 +127,7 @@ export function useServerIcon(
 
     function scheduleStaggeredFetch() {
         if (delayTimer) { clearTimeout(delayTimer); delayTimer = null }
+        // Cached entries skip the delay and resolve synchronously
         const delay = iconCache.has(endpoint) ? 0 : cardIndex * CARD_FETCH_STAGGER
         if (delay === 0) {
             doFetch()
@@ -138,52 +136,30 @@ export function useServerIcon(
         }
     }
 
-    /** Start observing when cardRef is set */
-    function startObserving() {
-        if (!cardRef.value || observer) return
+    // Queue fetch immediately on mount — all cards on the page start together
+    onMounted(() => {
+        if (!iconCache.has(endpoint)) {
+            cardReady.value = false
+        }
+        scheduleStaggeredFetch()
+    })
 
-        observer = new IntersectionObserver(
-            (entries) => {
-                if (entries[0]?.isIntersecting) {
-                    scheduleStaggeredFetch()
-                    observer?.disconnect()
-                    observer = null
-                }
-            },
-            { rootMargin: '50px' },
-        )
-
-        observer.observe(cardRef.value)
-    }
-
-    // Re-initialise when pageKey changes (page navigation)
+    // Re-queue when pageKey changes (page navigation — new set of cards)
     watch(() => pageKey, () => {
-        // Reset fetch state so the new page's cards fetch fresh
         fetched = false
         if (!iconCache.has(endpoint)) {
             cardReady.value = false
             iconUrl.value = ''
             loadFailed.value = false
         }
-        // Restart observer for the new card position
-        observer?.disconnect()
-        observer = null
-        if (cardRef.value) startObserving()
-    })
-
-    // Watch for cardRef being set (template ref)
-    watch(cardRef, (el) => {
-        if (el) startObserving()
+        scheduleStaggeredFetch()
     })
 
     onUnmounted(() => {
-        observer?.disconnect()
-        observer = null
         if (delayTimer) { clearTimeout(delayTimer); delayTimer = null }
     })
 
     return {
-        cardRef,
         iconUrl,
         bannerUrl,
         upvotePower,
