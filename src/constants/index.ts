@@ -40,6 +40,9 @@ export const SORT_OPTIONS: SortOption[] = [
 export const DEFAULT_PER_PAGE = 12
 export const INLINE_AD_INTERVAL = 6
 
+/** Max concurrent /api/servers/single/ requests to avoid rate limiting */
+export const SINGLE_SERVER_MAX_CONCURRENT = 3
+
 /** API base URLs */
 export const API = {
   /** CORS proxy */

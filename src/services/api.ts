@@ -1,4 +1,4 @@
-import { API, CACHE_DURATION, DEFAULT_PER_PAGE } from '@/constants'
+import { API, CACHE_DURATION, SINGLE_SERVER_MAX_CONCURRENT } from '@/constants'
 import type { CfxServer, CfxServerData, PlayerCounts } from '@/types'
 
 // ---------------------------------------------------------------------------
@@ -336,9 +336,6 @@ async function parseStreamResponse(
 // ---------------------------------------------------------------------------
 // Single-server request throttle
 // ---------------------------------------------------------------------------
-
-/** Max concurrent /api/servers/single/ requests to avoid rate limiting */
-const SINGLE_SERVER_MAX_CONCURRENT = Math.round(DEFAULT_PER_PAGE / 2)
 
 let singleServerActive = 0
 const singleServerQueue: Array<() => void> = []
