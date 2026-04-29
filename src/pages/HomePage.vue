@@ -18,7 +18,6 @@ import ServerList from '@/components/server/ServerList.vue'
 import StatsBar from '@/components/common/StatsBar.vue'
 import Pagination from '@/components/common/Pagination.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
-import { defineAsyncComponent } from 'vue'
 
 const {
   loading,
@@ -42,6 +41,7 @@ const headerAd: AdSlot = { id: 'header-banner', position: 'header', size: 'leade
 const sidebarAd: AdSlot = { id: 'sidebar-rect', position: 'sidebar', size: 'rectangle', enabled: AD_ENABLED.SIDEBAR }
 const sidebarAd2: AdSlot = { id: 'sidebar-rect-2', position: 'sidebar', size: 'rectangle', enabled: AD_ENABLED.SIDEBAR }
 const sidebarAd3: AdSlot = { id: 'sidebar-rect-3', position: 'sidebar', size: 'rectangle', enabled: AD_ENABLED.SIDEBAR }
+const sidebarAd4: AdSlot = { id: 'sidebar-rect-4', position: 'sidebar', size: 'rectangle', enabled: AD_ENABLED.SIDEBAR }
 
 function handleSortUpdate(field: SortField, order: SortOrder) {
   filters.value.sortBy = field
@@ -189,6 +189,7 @@ watch(stats, (newStats) => {
             <AdBanner :ad-slot="sidebarAd" />
             <AdBanner :ad-slot="sidebarAd2" />
             <AdBanner :ad-slot="sidebarAd3" />
+            <AdBanner :ad-slot="sidebarAd4" />
           </aside>
         </div>
       </div>
