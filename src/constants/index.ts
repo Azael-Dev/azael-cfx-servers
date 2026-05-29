@@ -50,17 +50,17 @@ export const API = {
   /** All server data — CORS-enabled stream (primary for browser) */
   STREAM_CFX: 'https://frontend.cfx-services.net/api/servers/stream/',
   /** All server data via redirect (302 lacks CORS — only usable server-side) */
-  STREAM_REDIR: 'https://servers-frontend.fivem.net/api/servers/streamRedir/',
+  STREAM_REDIR: 'https://frontend.cfx-services.net/api/servers/streamRedir/',
   /** All server data direct (no CORS — fallback via Vite proxy) */
-  STREAM_DIRECT: 'https://servers-frontend.fivem.net/api/servers/stream/',
+  STREAM_DIRECT: 'https://frontend.cfx-services.net/api/servers/stream/',
   /** Single server details */
-  SINGLE_SERVER: 'https://servers-frontend.fivem.net/api/servers/single',
+  SINGLE_SERVER: 'https://frontend.cfx-services.net/api/servers/single',
   /** Player counts — response: [players, unknown, maxSlots] */
   COUNTS_FIVEM: 'https://static.cfx.re/runtime/counts.json',
   COUNTS_REDM: 'https://static.cfx.re/runtime/counts_rdr3.json',
   /** Server icon */
   SERVER_ICON: (endpoint: string, iconVersion: number) =>
-    `https://servers-frontend.fivem.net/api/servers/icon/${endpoint}/${iconVersion}.png`,
+    `https://frontend.cfx-services.net/api/servers/icon/${endpoint}/${iconVersion}.png`,
   /** Geolocation API */
   GEOLOCATION: 'https://free.freeipapi.com/api/json',
 } as const
